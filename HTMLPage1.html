@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Employee Data</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" />
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <div id="employeeTableContainer"></div>
+
+    <script id="xmlData" type="text/xml">
+        <employees>
+            <employee>
+                <id>1</id>
+                <name>John Doe</name>
+                <position>Developer</position>
+            </employee>
+            <employee>
+                <id>2</id>
+                <name>Jane Smith</name>
+                <position>Designer</position>
+            </employee>
+        </employees>
+    </script>
+
+    <script id="xsltData" type="text/xml">
+        <xsl:stylesheet version="1.0"
+            xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:template match="/">
+                <table id="employeeTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <xsl:for-each select="employees/employee">
+                            <tr>
+                                <td><xsl:value-of select="id"/></td>
+                                <td><xsl:value-of select="name"/></td>
+                                <td><xsl:value-of select="position"/></td>
+                            </tr>
+                        </xsl:for-each>
+                    </tbody>
+                </table>
+            </xsl:template>
+        </xsl:stylesheet>
+    </script>
+
+    <script>
+        $(document).ready(function() {
+            var xml = $.parseXML($('#xmlData').html());
+            var xslt = $.parseXML($('#xsltData').html());
+            var xsltProcessor = new XSLTProcessor();
+            xsltProcessor.importStylesheet(xslt);
+            var resultDocument = xsltProcessor.transformToFragment(xml, document);
+
+            $('#employeeTableContainer').append(resultDocument);
+            $('#employeeTable').DataTable();
+        });
+    </script>
+</body>
+</html>
