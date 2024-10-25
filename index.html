@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Employee Data</title>
+    <title>Task Data</title>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" />
     <style>
         body {
@@ -10,7 +10,7 @@
             margin: 20px;
             background-color: #f5f5f5;
         }
-        #employeeTableContainer {
+        #taskTableContainer {
             background-color: white;
             padding: 20px;
             border-radius: 8px;
@@ -19,14 +19,14 @@
         .dataTables_wrapper {
             margin-top: 20px;
         }
-        #employeeTable {
+        #taskTable {
             width: 100% !important;
         }
-        #employeeTable th {
+        #taskTable th {
             background-color: #f8f9fa;
             font-weight: bold;
         }
-        #employeeTable td, #employeeTable th {
+        #taskTable td, #taskTable th {
             padding: 12px 15px;
         }
         .status-active {
@@ -54,13 +54,13 @@
     </style>
 </head>
 <body>
-    <h1>Employee Directory</h1>
-    <div id="employeeTableContainer"></div>
+    <h1>Task Directory</h1>
+    <div id="taskTableContainer"></div>
     
     <script id="xmlData" type="text/xml">
         <?xml version="1.0" encoding="UTF-8"?>
-        <employees>
-            <employee>
+        <tasks>
+            <task>
                 <id>1</id>
                 <name>John Doe</name>
                 <position>Developer</position>
@@ -74,8 +74,8 @@
                     </ul>
                     <p>Current projects: <span class="highlight">Project Alpha</span></p>
                 ]]></description>
-            </employee>
-            <employee>
+            </task>
+            <task>
                 <id>2</id>
                 <name>Jane Smith</name>
                 <position>Designer</position>
@@ -97,8 +97,8 @@
                     </table>
                     <em>Design system maintainer</em>
                 ]]></description>
-            </employee>
-            <employee>
+            </task>
+            <task>
                 <id>3</id>
                 <name>Bob Wilson</name>
                 <position>Manager</position>
@@ -115,8 +115,8 @@
                         <p><small>Note: Currently on sabbatical</small></p>
                     </div>
                 ]]></description>
-            </employee>
-        </employees>
+            </task>
+        </tasks>
     </script>
 
     <script id="xsltData" type="text/xml">
@@ -124,7 +124,7 @@
         <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
             <xsl:output method="html" encoding="UTF-8" indent="yes"/>
             <xsl:template match="/">
-                <table id="employeeTable" class="display">
+                <table id="taskTable" class="display">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -135,7 +135,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <xsl:for-each select="employees/employee">
+                        <xsl:for-each select="tasks/task">
                             <tr>
                                 <td><xsl:value-of select="id"/></td>
                                 <td><xsl:value-of select="name"/></td>
@@ -188,10 +188,10 @@
                     throw new Error("XSLT transformation failed to produce output");
                 }
                 
-                document.getElementById('employeeTableContainer').appendChild(resultDocument);
+                document.getElementById('taskTableContainer').appendChild(resultDocument);
                 
                 $(document).ready(function() {
-                    $('#employeeTable').DataTable({
+                    $('#taskTable').DataTable({
                         pageLength: 10,
                         order: [[0, 'asc']],
                         columnDefs: [
@@ -205,8 +205,8 @@
                 
             } catch (error) {
                 console.error('Detailed error:', error);
-                document.getElementById('employeeTableContainer').innerHTML = 
-                    '<p>Error loading employee data: ' + error.message + '</p>';
+                document.getElementById('taskTableContainer').innerHTML = 
+                    '<p>Error loading task data: ' + error.message + '</p>';
             }
         });
     </script>
