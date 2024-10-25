@@ -1,0 +1,22 @@
+def indent_xml(elem, level=0, indent="  "):
+    """
+    Indent an XML ElementTree element for pretty printing.
+    
+    Args:
+        elem: Element from ElementTree
+        level: Current indentation level (default: 0)
+        indent: Indentation string (default: two spaces)
+    """
+    i = "\n" + level * indent
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + indent
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for subelem in elem:
+            indent_xml(subelem, level + 1, indent)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
