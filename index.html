@@ -4,37 +4,134 @@
     <meta charset="UTF-8">
     <title>Employee Data</title>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" />
-    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        #employeeTableContainer {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .dataTables_wrapper {
+            margin-top: 20px;
+        }
+        #employeeTable {
+            width: 100% !important;
+        }
+        #employeeTable th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        #employeeTable td, #employeeTable th {
+            padding: 12px 15px;
+        }
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: red;
+            font-weight: bold;
+        }
+        .inner-table {
+            border-collapse: collapse;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .inner-table td, .inner-table th {
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
 </head>
 <body>
+    <h1>Employee Directory</h1>
     <div id="employeeTableContainer"></div>
-
+    
     <script id="xmlData" type="text/xml">
+        <?xml version="1.0" encoding="UTF-8"?>
         <employees>
             <employee>
                 <id>1</id>
                 <name>John Doe</name>
                 <position>Developer</position>
+                <status><![CDATA[<span class="status-active">Active</span>]]></status>
+                <description><![CDATA[
+                    <strong>Lead Developer</strong>
+                    <ul>
+                        <li>Full-stack development</li>
+                        <li>Team mentoring</li>
+                        <li>Architecture design</li>
+                    </ul>
+                    <p>Current projects: <span class="highlight">Project Alpha</span></p>
+                ]]></description>
             </employee>
             <employee>
                 <id>2</id>
-                <name>Jane Smit</name>
+                <name>Jane Smith</name>
                 <position>Designer</position>
+                <status><![CDATA[<span class="status-active">Active</span>]]></status>
+                <description><![CDATA[
+                    <table class="inner-table">
+                        <tr>
+                            <th>Skill</th>
+                            <th>Level</th>
+                        </tr>
+                        <tr>
+                            <td>UI Design</td>
+                            <td>Expert</td>
+                        </tr>
+                        <tr>
+                            <td>UX Research</td>
+                            <td>Advanced</td>
+                        </tr>
+                    </table>
+                    <em>Design system maintainer</em>
+                ]]></description>
+            </employee>
+            <employee>
+                <id>3</id>
+                <name>Bob Wilson</name>
+                <position>Manager</position>
+                <status><![CDATA[<span class="status-inactive">Inactive</span>]]></status>
+                <description><![CDATA[
+                    <div>
+                        <p><strong>Department:</strong> Engineering</p>
+                        <p>Experience:</p>
+                        <ol>
+                            <li>5 years as Team Lead</li>
+                            <li>3 years as Project Manager</li>
+                            <li>Currently managing <mark>3 teams</mark></li>
+                        </ol>
+                        <p><small>Note: Currently on sabbatical</small></p>
+                    </div>
+                ]]></description>
             </employee>
         </employees>
     </script>
 
     <script id="xsltData" type="text/xml">
-        <xsl:stylesheet version="1.0"
-            xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+        <?xml version="1.0" encoding="UTF-8"?>
+        <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:output method="html" encoding="UTF-8" indent="yes"/>
             <xsl:template match="/">
-                <table id="employeeTable">
+                <table id="employeeTable" class="display">
                     <thead>
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
                             <th>Position</th>
+                            <th>Status</th>
+                            <th>Description</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -43,6 +140,8 @@
                                 <td><xsl:value-of select="id"/></td>
                                 <td><xsl:value-of select="name"/></td>
                                 <td><xsl:value-of select="position"/></td>
+                                <td><xsl:value-of select="status" disable-output-escaping="yes"/></td>
+                                <td><xsl:value-of select="description" disable-output-escaping="yes"/></td>
                             </tr>
                         </xsl:for-each>
                     </tbody>
@@ -51,16 +150,64 @@
         </xsl:stylesheet>
     </script>
 
+    <!-- Load jQuery first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Then load DataTables -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    
+    <!-- Your custom script should come last -->
     <script>
-        $(document).ready(function() {
-            var xml = $.parseXML($('#xmlData').html());
-            var xslt = $.parseXML($('#xsltData').html());
-            var xsltProcessor = new XSLTProcessor();
-            xsltProcessor.importStylesheet(xslt);
-            var resultDocument = xsltProcessor.transformToFragment(xml, document);
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof jQuery === 'undefined') {
+                console.error('jQuery is not loaded!');
+                return;
+            }
 
-            $('#employeeTableContainer').append(resultDocument);
-            $('#employeeTable').DataTable();
+            try {
+                var xmlContent = document.getElementById('xmlData').innerHTML.trim();
+                var xsltContent = document.getElementById('xsltData').innerHTML.trim();
+                
+                var parser = new DOMParser();
+                var xml = parser.parseFromString(xmlContent, "text/xml");
+                var xslt = parser.parseFromString(xsltContent, "text/xml");
+                
+                if (xml.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error("XML Parsing Error: " + xml.getElementsByTagName("parsererror")[0].textContent);
+                }
+                
+                if (xslt.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error("XSLT Parsing Error: " + xslt.getElementsByTagName("parsererror")[0].textContent);
+                }
+                
+                var xsltProcessor = new XSLTProcessor();
+                xsltProcessor.importStylesheet(xslt);
+                
+                var resultDocument = xsltProcessor.transformToFragment(xml, document);
+                
+                if (!resultDocument) {
+                    throw new Error("XSLT transformation failed to produce output");
+                }
+                
+                document.getElementById('employeeTableContainer').appendChild(resultDocument);
+                
+                $(document).ready(function() {
+                    $('#employeeTable').DataTable({
+                        pageLength: 10,
+                        order: [[0, 'asc']],
+                        columnDefs: [
+                            {
+                                targets: [3, 4], // Status and Description columns
+                                orderable: false // Disable sorting for HTML columns
+                            }
+                        ]
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Detailed error:', error);
+                document.getElementById('employeeTableContainer').innerHTML = 
+                    '<p>Error loading employee data: ' + error.message + '</p>';
+            }
         });
     </script>
 </body>
