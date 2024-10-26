@@ -129,8 +129,6 @@
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
-                            <th>Position</th>
-                            <th>Status</th>
                             <th>Description</th>
                         </tr>
                     </thead>
@@ -139,8 +137,6 @@
                             <tr>
                                 <td><xsl:value-of select="id"/></td>
                                 <td><xsl:value-of select="name"/></td>
-                                <td><xsl:value-of select="position"/></td>
-                                <td><xsl:value-of select="status" disable-output-escaping="yes"/></td>
                                 <td><xsl:value-of select="description" disable-output-escaping="yes"/></td>
                             </tr>
                         </xsl:for-each>
@@ -196,7 +192,7 @@
                         order: [[0, 'asc']],
                         columnDefs: [
                             {
-                                targets: [3, 4], // Status and Description columns
+                                targets: [2], //  Description columns
                                 orderable: false // Disable sorting for HTML columns
                             }
                         ]

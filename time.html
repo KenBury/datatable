@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Data</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css" />
+    <style>
+        /* Previous styles remain the same */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        #taskTableContainer {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .dataTables_wrapper {
+            margin-top: 20px;
+        }
+        #taskTable {
+            width: 100% !important;
+        }
+        #taskTable th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        #taskTable td, #taskTable th {
+            padding: 12px 15px;
+        }
+        .status-active {
+            color: green;
+            font-weight: bold;
+        }
+        .status-inactive {
+            color: red;
+            font-weight: bold;
+        }
+        .inner-table {
+            border-collapse: collapse;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+        .inner-table td, .inner-table th {
+            border: 1px solid #ddd;
+            padding: 4px 8px;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task Directory</h1>
+    <div id="taskTableContainer"></div>
+    
+    <script id="xmlData" type="text/xml">
+        <?xml version="1.0" encoding="UTF-8"?>
+        <root>
+            <template>
+                <id>1000</id>
+                <start_planned>2024-10-05T04:00:000Z</start_planned>
+            </template>
+            <tasks>
+                <task>
+                    <id>1</id>
+                    <name>John Doe</name>
+                    <start_planned>2024-10-05T04:00:000Z</start_planned>
+                    <description><
+                        <strong>Lead Developer</strong>
+                        <ul>
+                            <li>Full-stack development</li>
+                            <li>Team mentoring</li>
+                            <li>Architecture design</li>
+                        </ul>
+                        <p>Current projects: <span class="highlight">Project Alpha</span></p>
+                    </description>
+                </task>
+                <task>
+                    <id>2</id>
+                    <name>Jane Smith</name>
+                    <start_planned>2024-10-05T04:30:000Z</start_planned>
+                    <description><
+                        <table class="inner-table">
+                            <tr>
+                                <th>Skill</th>
+                                <th>Level</th>
+                            </tr>
+                            <tr>
+                                <td>UI Design</td>
+                                <td>Expert</td>
+                            </tr>
+                            <tr>
+                                <td>UX Research</td>
+                                <td>Advanced</td>
+                            </tr>
+                        </table>
+                        <em>Design system maintainer</em>
+                    </description>
+                </task>
+                <task>
+                    <id>3</id>
+                    <name>Bob Wilson</name>
+                    <start_planned>2024-10-05T04:42:000Z</start_planned>
+                    <description><
+                        <div>
+                            <p><strong>Department:</strong> Engineering</p>
+                            <p>Experience:</p>
+                            <ol>
+                                <li>5 years as Team Lead</li>
+                                <li>3 years as Project Manager</li>
+                                <li>Currently managing <mark>3 teams</mark></li>
+                            </ol>
+                            <p><small>Note: Currently on sabbatical</small></p>
+                        </div>
+                    </description>
+                </task>
+            </tasks>
+        </root>
+    </script>
+
+    <script id="xsltData" type="text/xml">
+        <?xml version="1.0" encoding="UTF-8"?>
+        <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+            <xsl:output method="html" encoding="UTF-8" indent="yes"/>
+            
+            <!-- Template start time variable -->
+            <xsl:variable name="template-start" select="/root/template/start_planned"/>
+            
+            <!-- Helper template to calculate minutes difference -->
+            <xsl:template name="calculate-minutes-difference">
+                <xsl:param name="datetime1"/>
+                <xsl:param name="datetime2"/>
+                
+                <xsl:variable name="time1" select="substring($datetime1, 12, 5)"/>
+                <xsl:variable name="time2" select="substring($datetime2, 12, 5)"/>
+                
+                <xsl:variable name="minutes1">
+                    <xsl:value-of select="number(substring($time1, 1, 2)) * 60 + 
+                                        number(substring($time1, 4, 2))"/>
+                </xsl:variable>
+                <xsl:variable name="minutes2">
+                    <xsl:value-of select="number(substring($time2, 1, 2)) * 60 + 
+                                        number(substring($time2, 4, 2))"/>
+                </xsl:variable>
+                
+                <xsl:value-of select="$minutes2 - $minutes1"/>
+            </xsl:template>
+            
+            <xsl:template match="/">
+                <table id="taskTable" class="display">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Start Display</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <xsl:for-each select="root/tasks/task">
+                            <tr>
+                                <td><xsl:value-of select="id"/></td>
+                                <td><xsl:value-of select="name"/></td>
+                                <td>
+                                    <xsl:call-template name="calculate-minutes-difference">
+                                        <xsl:with-param name="datetime1" select="$template-start"/>
+                                        <xsl:with-param name="datetime2" select="start_planned"/>
+                                    </xsl:call-template>
+                                    <xsl:text> minutes</xsl:text>
+                                </td>
+                                <td><xsl:value-of select="description" disable-output-escaping="yes"/></td>
+                            </tr>
+                        </xsl:for-each>
+                    </tbody>
+                </table>
+            </xsl:template>
+        </xsl:stylesheet>
+    </script>
+
+    <!-- Load jQuery first -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- Then load DataTables -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    
+    <!-- Your custom script should come last -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof jQuery === 'undefined') {
+                console.error('jQuery is not loaded!');
+                return;
+            }
+
+            try {
+                var xmlContent = document.getElementById('xmlData').innerHTML.trim();
+                var xsltContent = document.getElementById('xsltData').innerHTML.trim();
+                
+                var parser = new DOMParser();
+                var xml = parser.parseFromString(xmlContent, "text/xml");
+                var xslt = parser.parseFromString(xsltContent, "text/xml");
+                
+                if (xml.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error("XML Parsing Error: " + xml.getElementsByTagName("parsererror")[0].textContent);
+                }
+                
+                if (xslt.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error("XSLT Parsing Error: " + xslt.getElementsByTagName("parsererror")[0].textContent);
+                }
+                
+                var xsltProcessor = new XSLTProcessor();
+                xsltProcessor.importStylesheet(xslt);
+                
+                var resultDocument = xsltProcessor.transformToFragment(xml, document);
+                
+                if (!resultDocument) {
+                    throw new Error("XSLT transformation failed to produce output");
+                }
+                
+                document.getElementById('taskTableContainer').appendChild(resultDocument);
+                
+                $(document).ready(function() {
+                    $('#taskTable').DataTable({
+                        pageLength: 10,
+                        order: [[0, 'asc']],
+                        columnDefs: [
+                            {
+                                targets: [3], // Description column
+                                orderable: false // Disable sorting for HTML columns
+                            }
+                        ]
+                    });
+                });
+                
+            } catch (error) {
+                console.error('Detailed error:', error);
+                document.getElementById('taskTableContainer').innerHTML = 
+                    '<p>Error loading task data: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>
