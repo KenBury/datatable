@@ -15,79 +15,79 @@ def generate_html(template_data, tasks):
     <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.2.2/js/buttons.html5.min.js"></script>
     
     <style>
-        .container {{
+        .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-        }}
-        .controls {{
+        }
+        .controls {
             margin-bottom: 20px;
-        }}
-        .template-info {{
+        }
+        .template-info {
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-radius: 4px;
             padding: 15px;
             margin-bottom: 20px;
-        }}
-        .template-info h2 {{
+        }
+        .template-info h2 {
             margin-top: 0;
             margin-bottom: 15px;
             color: #333;
-        }}
-        .template-details {{
+        }
+        .template-details {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
-        }}
-        .template-detail {{
+        }
+        .template-detail {
             background: white;
             padding: 10px;
             border-radius: 4px;
             border: 1px solid #e9ecef;
-        }}
-        .detail-label {{
+        }
+        .detail-label {
             font-weight: bold;
             color: #495057;
             margin-bottom: 5px;
-        }}
-        .dt-buttons {{
+        }
+        .dt-buttons {
             margin-bottom: 10px;
-        }}
-        .dt-button {{
+        }
+        .dt-button {
             padding: 5px 10px;
             margin-right: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
             background-color: #f8f9fa;
             cursor: pointer;
-        }}
-        .dt-button:hover {{
+        }
+        .dt-button:hover {
             background-color: #e9ecef;
-        }}
-        .description-content {{
+        }
+        .description-content {
             max-width: 400px;
             overflow-x: auto;
-        }}
-        .description-content table {{
+        }
+        .description-content table {
             border-collapse: collapse;
             margin: 10px 0;
-        }}
-        .description-content td, .description-content th {{
+        }
+        .description-content td, .description-content th {
             border: 1px solid #ddd;
             padding: 4px 8px;
-        }}
-        .description-content ul, .description-content ol {{
+        }
+        .description-content ul, .description-content ol {
             margin: 5px 0;
             padding-left: 20px;
-        }}
-        .description-content a {{
+        }
+        .description-content a {
             color: #0066cc;
             text-decoration: none;
-        }}
-        .description-content a:hover {{
+        }
+        .description-content a:hover {
             text-decoration: underline;
-        }}
+        }
     </style>
 </head>
 <body>
@@ -130,7 +130,7 @@ def generate_html(template_data, tasks):
     </div>
 
     <script>
-        function addOffset(dateTime, offsetMinutes) {{
+        function addOffset(dateTime, offsetMinutes) {
             const date = new Date(dateTime);
             const offset = parseInt(offsetMinutes, 10);
             date.setMinutes(date.getMinutes() + offset);
@@ -142,100 +142,100 @@ def generate_html(template_data, tasks):
             const minutes = String(date.getMinutes()).padStart(2, '0');
             
             return `{}-{}-{}T{}:{}`.format(year, month, day, hours, minutes);
-        }}
+        }
 
-        $(document).ready(function() {{
+        $(document).ready(function() {
             // Populate template information
             $('#template-id').text('{template_data[id]}');
             $('#template-name').text('{template_data[name]}');
             $('#template-version').text('{template_data[version]}');
 
-            function initializeTable(dateTime = null) {{
-                return $('#taskTable').DataTable({{
+            function initializeTable(dateTime = null) {
+                return $('#taskTable').DataTable({
                     data: [
                         {tasks_data}
                     ],
                     dom: 'Bfrtip',
                     buttons: [
-                        {{
+                        {
                             extend: 'pdf',
                             text: 'Export to PDF',
-                            title: function() {{
+                            title: function() {
                                 return `Task Schedule - {template_data[name]} (v{template_data[version]})`;
-                            }},
-                            filename: function() {{
+                            },
+                            filename: function() {
                                 const now = new Date();
                                 return `task_schedule_{template_data[id]}_${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-                            }},
-                            customize: function(doc) {{
+                            },
+                            customize: function(doc) {
                                 // Add template information to PDF
-                                doc.content.splice(1, 0, {{
+                                doc.content.splice(1, 0, {
                                     text: [
-                                        {{text: 'Template ID: ', bold: true}}, {{text: '{template_data[id]}\\n'}},
-                                        {{text: 'Template Name: ', bold: true}}, {{text: '{template_data[name]}\\n'}},
-                                        {{text: 'Version: ', bold: true}}, {{text: '{template_data[version]}\\n\\n'}}
+                                        {text: 'Template ID: ', bold: true}, {text: '{template_data[id]}\\n'},
+                                        {text: 'Template Name: ', bold: true}, {text: '{template_data[name]}\\n'},
+                                        {text: 'Version: ', bold: true}, {text: '{template_data[version]}\\n\\n'}
                                     ],
                                     margin: [0, 10, 0, 10]
-                                }});
+                                });
                                 doc.defaultStyle.fontSize = 10;
                                 doc.styles.tableHeader.fontSize = 12;
                                 doc.styles.tableHeader.bold = true;
-                            }},
-                            exportOptions: {{
+                            },
+                            exportOptions: {
                                 columns: [0, 1, 2, 3, 4],
-                                format: {{
-                                    body: function(data, row, column) {{
+                                format: {
+                                    body: function(data, row, column) {
                                         return data;
-                                    }}
-                                }}
-                            }}
-                        }}
+                                    }
+                                }
+                            }
+                        }
                     ],
                     columns: [
-                        {{ data: 'id' }},
-                        {{ data: 'name' }},
-                        {{ 
+                        { data: 'id' },
+                        { data: 'name' },
+                        { 
                             data: null,
-                            render: function(data, type, row) {{
+                            render: function(data, type, row) {
                                 return dateTime ? addOffset(dateTime, row.start_offset) : '';
-                            }}
-                        }},
-                        {{ data: 'start_offset' }},
-                        {{ 
+                            }
+                        },
+                        { data: 'start_offset' },
+                        { 
                             data: 'description',
-                            render: function(data, type, row) {{
-                                if (type === 'display') {{
+                            render: function(data, type, row) {
+                                if (type === 'display') {
                                     return `<div class="description-content">${data}</div>`;
-                                }}
+                                }
                                 return data;
-                            }}
-                        }}
+                            }
+                        }
                     ]
-                }});
-            }}
+                });
+            }
 
             let table = initializeTable();
 
-            $('#transform-button').on('click', function() {{
+            $('#transform-button').on('click', function() {
                 const dateTime = $('#date-time-input').val();
-                if (dateTime) {{
+                if (dateTime) {
                     table.destroy();
                     table = initializeTable(dateTime);
-                }}
-            }});
-        }});
+                }
+            });
+        });
     </script>
 </body>
 </html>
     """
 
     tasks_data = ",\n".join(["""
-        {{
+        {
             id: {id},
             name: "{name}",
             description: `{description}`,
             start_offset: "{start_offset}"
-        }}
+        }
     """.format(
         id=task["id"],
         name=task["name"],
@@ -295,6 +295,10 @@ tasks = [
     }
 ]
 
+if __name__ == "__main__":
+    html_output = generate_html(template_data, tasks)
+    with open('output.html', 'w', encoding='utf-8') as file:
+        file.write(html_output)
 if __name__ == "__main__":
     html_output = generate_html(template_data, tasks)
     with open('output.html', 'w', encoding='utf-8') as file:
