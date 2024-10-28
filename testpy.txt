@@ -1,95 +1,112 @@
-import os
-
-def generate_task_scheduler_html(tasks, template_info):
-    """
-    Generate the HTML file for the Task Scheduler.
-
-    Args:
-        tasks (list): A list of task dictionaries, each with the following keys:
-            - id (int): The task ID.
-            - name (str): The task name.
-            - description (str): The task description (can contain HTML).
-            - start_offset (str): The task start offset in minutes.
-        template_info (dict): A dictionary containing the template information, with the following keys:
-            - id (str): The template ID.
-            - name (str): The template name.
-            - version (str): The template version.
-
-    Returns:
-        None
-    """
-    html = f'''
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Task Scheduler</title>
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css"/>
-        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css"/>
+def generate_html(template_data, tasks):
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Task Scheduler</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css"/>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.dataTables.min.css"/>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.2.2/js/buttons.html5.min.js"></script>
+    
+    <style>
+        /* CSS styles go here */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task Scheduler</h1>
         
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.21/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.2.2/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/datatables.net-buttons/2.2.2/js/buttons.html5.min.js"></script>
-        
-        <style>
-            /* Your CSS styles go here */
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <h1>Task Scheduler</h1>
-            
-            <div class="template-info">
-                <h2>Template Information</h2>
-                <div class="template-details">
-                    <div class="template-detail">
-                        <div class="detail-label">Template ID:</div>
-                        <div id="template-id">{template_info["id"]}</div>
-                    </div>
-                    <div class="template-detail">
-                        <div class="detail-label">Template Name:</div>
-                        <div id="template-name">{template_info["name"]}</div>
-                    </div>
-                    <div class="template-detail">
-                        <div class="detail-label">Version:</div>
-                        <div id="template-version">{template_info["version"]}</div>
-                    </div>
+        <div class="template-info">
+            <h2>Template Information</h2>
+            <div class="template-details">
+                <div class="template-detail">
+                    <div class="detail-label">Template ID:</div>
+                    <div id="template-id">{}</div>
+                </div>
+                <div class="template-detail">
+                    <div class="detail-label">Template Name:</div>
+                    <div id="template-name">{}</div>
+                </div>
+                <div class="template-detail">
+                    <div class="detail-label">Version:</div>
+                    <div id="template-version">{}</div>
                 </div>
             </div>
-
-            <div class="controls">
-                <input type="datetime-local" id="date-time-input" step="60" />
-                <button id="transform-button">Set Start</button>
-            </div>
-            <table id="taskTable" class="display">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Start Display</th>
-                        <th>Offset (min)</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-            </table>
         </div>
 
-        <script>
-            // Your JavaScript code goes here
-        </script>
-    </body>
-    </html>
-    '''
+        <div class="controls">
+            <input type="datetime-local" id="date-time-input" step="60" />
+            <button id="transform-button">Set Start</button>
+        </div>
+        <table id="taskTable" class="display">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Start Display</th>
+                    <th>Offset (min)</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
 
-    with open('task_scheduler.html', 'w', encoding='utf-8') as file:
-        file.write(html)
+    <script>
+        // Sample template data - this would be passed from the server
+        const templateData = {{
+            id: "{}",
+            name: "{}",
+            version: "{}"
+        }};
 
-    print('HTML file generated successfully.')
+        // Sample tasks with HTML content in descriptions
+        const tasks = [
+    """.format(
+        template_data["id"],
+        template_data["name"],
+        template_data["version"]
+    )
 
-# Example usage
+    for task in tasks:
+        html += """
+            {{
+                id: {},
+                name: "{}",
+                description: `{}`,
+                start_offset: "{}"
+            }},
+        """.format(
+            task["id"],
+            task["name"],
+            task["description"],
+            task["start_offset"]
+        )
+
+    html += """
+        ];
+
+        // JavaScript code goes here
+    </script>
+</body>
+</html>
+    """
+
+    return html
+
+# Sample template data
+template_data = {
+    "id": "TEMP-001",
+    "name": "Standard Operating Procedure",
+    "version": "1.0.3"
+}
+
+# Sample tasks with HTML content in descriptions
 tasks = [
     {
         "id": 1,
@@ -127,10 +144,7 @@ tasks = [
     }
 ]
 
-template_info = {
-    "id": "TEMP-001",
-    "name": "Standard Operating Procedure",
-    "version": "1.0.3"
-}
-
-generate_task_scheduler_html(tasks, template_info)
+if __name__ == "__main__":
+    html_output = generate_html(template_data, tasks)
+    with open('output.html', 'w', encoding='utf-8') as file:
+        file.write(html_output)
