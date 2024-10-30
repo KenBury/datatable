@@ -1,0 +1,99 @@
+from typing import Dict, List
+import html
+
+class HTMLGenerator:
+    @staticmethod
+    def generate_html(template_data: Dict, tasks: List[Dict]) -> str:
+        # Helper function to create HTML attributes string
+        def create_style_attr(style_str: str) -> str:
+            return f' style="{style_str}"' if style_str else ''
+
+        # Generate the template section
+        template_html = f"""
+        <script>
+            const templateData = {{
+                id: "{html.escape(template_data['id'])}",
+                name: "{html.escape(template_data['name'])}",
+                version: "{html.escape(template_data['version'])}"
+            }};
+        </script>
+        """
+
+        # Generate the tasks section
+        tasks_html = """
+        <script>
+            const tasks = [
+        """
+
+        for task in tasks:
+            # Preserve the raw HTML in description but escape other values
+            task_html = f"""                {{
+                    id: {task['id']},
+                    name: "{html.escape(task['name'])}",
+                    description: `{task['description']}`,
+                    start_offset: "{html.escape(str(task['start_offset']))}",
+                    task_duration: "{html.escape(str(task['task_duration']))}"
+                }},\n"""
+            tasks_html += task_html
+
+        tasks_html += """            ];
+        </script>
+        """
+
+        # Combine all sections
+        final_html = template_html + tasks_html
+        return final_html
+
+# Example usage
+if __name__ == "__main__":
+    # Sample template data
+    template_data = {
+        "id": "TEMP-001",
+        "name": "Standard Operating Procedure",
+        "version": "1.0.3"
+    }
+
+    # Sample tasks
+    tasks = [
+        {
+            "id": 1,
+            "name": "Task 1",
+            "description": """
+                <div style="color: #2c5282;">
+                    <h4>Important Task</h4>
+                    <ul>
+                        <li>First item</li>
+                        <li>Second item with <span style="color: red;">urgent</span> flag</li>
+                    </ul>
+                    <table>
+                        <tr><th>Header 1</th><th>Header 2</th></tr>
+                        <tr><td>Data 1</td><td>Data 2</td></tr>
+                    </table>
+                    <a href="#">View details</a>
+                </div>
+            """,
+            "start_offset": "360",
+            "task_duration": "120"
+        },
+        {
+            "id": 2,
+            "name": "Task 2",
+            "description": """
+                <div style="color: #2b6cb0;">
+                    <p>Regular task with:</p>
+                    <ol>
+                        <li>Numbered item 1</li>
+                        <li>Numbered item 2</li>
+                    </ol>
+                    <p style="background-color: #fff3cd; padding: 5px;">Warning: Requires review</p>
+                </div>
+            """,
+            "start_offset": "30",
+            "task_duration": "45"
+        }
+    ]
+
+    # Generate HTML
+    generator = HTMLGenerator()
+    html_output = generator.generate_html(template_data, tasks)
+    print(html_output)
