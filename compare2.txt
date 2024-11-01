@@ -87,4 +87,10 @@ def create_missing_entries(api_set, xml_set, file_set, max_versions_per_id=1):
         if (workspace_id, id_, version) in xml_set and (workspace_id, id_, version) not in file_set:
             add_file_set.add((workspace_id, id_, version))
 
+
+# Convert sets to lists of dictionaries, including the name from the map
+add_xml_list = [{'workspaceid': w, 'id': i, 'version': v, 'name': name_map[(w, i)]} for w, i, v in add_xml_set]
+del_xml_list = [{'workspaceid': w, 'id': i, 'version': v, 'name': name_map[(w, i)]} for w, i, v in del_xml_set]
+
+
     return add_xml_set, del_xml_set, add_file_set, del_file_set
