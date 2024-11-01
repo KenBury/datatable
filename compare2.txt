@@ -1,0 +1,62 @@
+def create_missing_entries(api_set, xml_set, file_set, add_xml_set, del_xml_set, add_file_set, del_file_set):
+    """
+    Creates missing entries and updates existing ones based on api_set and xml_set.
+    
+    Args:
+        api_set: A set of (workspace_id, id, version) tuples.
+        xml_set: A set of (workspace_id, id, version) tuples.
+        file_set: A set of (workspace_id, id, version) tuples.
+        add_xml_set: A set to store tuples to be added to xml_set.
+        del_xml_set: A set to store tuples to be deleted from xml_set.
+        add_file_set: A set to store tuples to be added to file_set.
+        del_file_set: A set to store tuples to be deleted from file_set.
+    """
+    # Create a nested dictionary for faster lookups of versions by workspace_id and id
+    xml_versions = {(workspace_id, id): version for workspace_id, id, version in xml_set}
+    
+    for workspace_id, id, version in api_set:
+        # Rule 1: Create missing entries
+        if (workspace_id, id, version) not in xml_set:
+            add_xml_set.add((workspace_id, id, version))
+            add_file_set.add((workspace_id, id, version))
+        
+        # Rule 2: Update entries with higher versions
+        if (workspace_id, id) in xml_versions:
+            old_version = xml_versions[(workspace_id, id)]
+            if version > old_version:
+                del_xml_set.add((workspace_id, id, old_version))
+                del_file_set.add((workspace_id, id, old_version))
+                add_xml_set.add((workspace_id, id, version))
+                add_file_set.add((workspace_id, id, version))
+        
+        # Rule 3: Add to file_set if missing but present in both api and xml
+        if (workspace_id, id, version) in xml_set and (workspace_id, id, version) not in file_set:
+            add_file_set.add((workspace_id, id, version))
+    
+    # Apply changes to the sets
+    xml_set.update(add_xml_set)
+    xml_set.difference_update(del_xml_set)
+    file_set.update(add_file_set)
+    file_set.difference_update(del_file_set)
+
+def print_operations(add_xml_set, del_xml_set, add_file_set, del_file_set):
+    """Helper function to print all operations."""
+    if add_xml_set:
+        print("\nAdding to XML set:")
+        for workspace_id, id, version in add_xml_set:
+            print(f"  Workspace ID: {workspace_id}, ID: {id}, Version: {version}")
+    
+    if del_xml_set:
+        print("\nDeleting from XML set:")
+        for workspace_id, id, version in del_xml_set:
+            print(f"  Workspace ID: {workspace_id}, ID: {id}, Version: {version}")
+    
+    if add_file_set:
+        print("\nAdding to File set:")
+        for workspace_id, id, version in add_file_set:
+            print(f"  Workspace ID: {workspace_id}, ID: {id}, Version: {version}")
+    
+    if del_file_set:
+        print("\nDeleting from File set:")
+        for workspace_id, id, version in del_file_set:
+            print(f"  Workspace ID: {workspace_id}, ID: {id}, Version: {version}")
