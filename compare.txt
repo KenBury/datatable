@@ -1,0 +1,90 @@
+def create_missing_entries(api_set, xml_set, file_set, max_versions_per_id=1):
+    """
+    Creates missing entries and updates existing ones based on api_set and xml_set.
+    Maintains a maximum number of versions per ID and synchronizes xml_set with file_set.
+
+    Args:
+        api_set: A set of (id, version) tuples from the API.
+        xml_set: A set of (id, version) tuples from XML.
+        file_set: A set of (id, version) tuples from files.
+        max_versions_per_id: Maximum number of versions to keep per ID (default: 1)
+
+    Returns:
+        tuple: (add_xml_set, del_xml_set, add_file_set, del_file_set)
+            - add_xml_set: Entries to be added to xml_set
+            - del_xml_set: Entries to be removed from xml_set
+            - add_file_set: Entries to be added to file_set
+            - del_file_set: Entries to be removed from file_set
+    """
+    add_xml_set = set()
+    del_xml_set = set()
+    del_file_set = set()
+    add_file_set = set()
+
+    # Create dictionaries for version lookups
+    xml_versions = {}
+    for id_, version in xml_set:
+        if id_ not in xml_versions:
+            xml_versions[id_] = []
+        xml_versions[id_].append(version)
+        xml_versions[id_].sort(reverse=True)  # Sort versions in descending order
+
+    # Rule 4: Add file_set entries missing from xml_set
+    for id_, version in file_set:
+        if (id_, version) not in xml_set:
+            existing_versions = xml_versions.get(id_, [])
+            
+            # Check if adding this version would exceed the limit
+            if len(existing_versions) < max_versions_per_id:
+                add_xml_set.add((id_, version))
+                # Update xml_versions dictionary
+                if id_ not in xml_versions:
+                    xml_versions[id_] = []
+                xml_versions[id_].append(version)
+                xml_versions[id_].sort(reverse=True)
+            else:
+                # If we're at the limit, only add if it's newer than existing versions
+                oldest_version = min(existing_versions)
+                if version > oldest_version:
+                    add_xml_set.add((id_, version))
+                    del_xml_set.add((id_, oldest_version))
+                    # Update xml_versions dictionary
+                    xml_versions[id_].remove(oldest_version)
+                    xml_versions[id_].append(version)
+                    xml_versions[id_].sort(reverse=True)
+
+    # Process api_set entries
+    for id_, version in api_set:
+        existing_versions = xml_versions.get(id_, [])
+        
+        # Rule 1: Create missing entries while respecting version limit
+        if not existing_versions:
+            add_xml_set.add((id_, version))
+            if (id_, version) not in file_set:
+                add_file_set.add((id_, version))
+        else:
+            # Check if this version is newer than existing ones
+            if version > max(existing_versions):
+                add_xml_set.add((id_, version))
+                if (id_, version) not in file_set:
+                    add_file_set.add((id_, version))
+                
+                # Remove older versions that exceed the limit
+                versions_to_keep = sorted(existing_versions, reverse=True)[:max_versions_per_id-1]
+                versions_to_remove = set(existing_versions) - set(versions_to_keep)
+                
+                for old_version in versions_to_remove:
+                    del_xml_set.add((id_, old_version))
+                    del_file_set.add((id_, old_version))
+            
+            # If version is not the newest but within the version limit
+            elif len(existing_versions) < max_versions_per_id and version not in existing_versions:
+                add_xml_set.add((id_, version))
+                if (id_, version) not in file_set:
+                    add_file_set.add((id_, version))
+        
+        # Rule 3: Add to file_set if missing
+        if (id_, version) in xml_set and (id_, version) not in file_set:
+            add_file_set.add((id_, version))
+
+    return add_xml_set, del_xml_set, add_file_set, del_file_set
