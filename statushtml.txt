@@ -6,9 +6,10 @@ import json
 def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.html") -> None:
     """
     Generate an HTML page with a DataTable showing status summaries from a pandas DataFrame.
+    Missing required columns will be automatically created and filled with zeros.
     
     Args:
-        df: Pandas DataFrame containing status data. Must have columns:
+        df: Pandas DataFrame containing status data. Required columns:
             - folder_name
             - Planning
             - Live: Active
@@ -19,7 +20,10 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
             - Rehearsal: Paused
         output_path: Path where the HTML file should be saved
     """
-    # Validate required columns
+    # Make a copy of the DataFrame to avoid modifying the original
+    df = df.copy()
+    
+    # Define required columns
     required_columns = [
         'folder_name',
         'Planning',
@@ -31,9 +35,11 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
         'Rehearsal: Paused'
     ]
     
-    missing_cols = [col for col in required_columns if col not in df.columns]
-    if missing_cols:
-        raise ValueError(f"Missing required columns: {missing_cols}")
+    # Check for missing columns and create them with zeros
+    for col in required_columns:
+        if col not in df.columns:
+            print(f"Creating missing column '{col}' with zero values")
+            df[col] = 0
     
     # Convert DataFrame to list of dictionaries for JSON serialization
     data = df.fillna(0).to_dict('records')
@@ -74,6 +80,9 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
             background-color: #f8f9fa;
             font-weight: bold;
         }}
+        .numeric-cell {{
+            text-align: right;
+        }}
     </style>
 </head>
 <body>
@@ -105,9 +114,10 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
 
         // Calculate totals and add completion percentage
         const tableData = rawData.map(row => {{
-            // Calculate total
-            const total = Object.values(row).reduce((sum, val) => 
-                typeof val === 'number' ? sum + val : sum, 0);
+            // Calculate total (excluding folder_name field)
+            const total = Object.entries(row)
+                .filter(([key, val]) => key !== 'folder_name' && typeof val === 'number')
+                .reduce((sum, [_, val]) => sum + val, 0);
 
             // Calculate completion percentage based on Live statuses only
             const liveTotal = row["Live: Active"] + row["Live: Paused"] + 
@@ -128,13 +138,34 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
                 data: tableData,
                 columns: [
                     {{ data: 'folder' }},
-                    {{ data: 'Planning' }},
-                    {{ data: 'Live: Active' }},
-                    {{ data: 'Live: Paused' }},
-                    {{ data: 'Live: Complete' }},
-                    {{ data: 'Live: Canceled' }},
-                    {{ data: 'Rehearsal: Active' }},
-                    {{ data: 'Rehearsal: Paused' }},
+                    {{ 
+                        data: 'Planning',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Live: Active',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Live: Paused',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Live: Complete',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Live: Canceled',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Rehearsal: Active',
+                        className: 'numeric-cell'
+                    }},
+                    {{ 
+                        data: 'Rehearsal: Paused',
+                        className: 'numeric-cell'
+                    }},
                     {{ 
                         data: 'percentComplete',
                         render: function(data, type, row) {{
@@ -157,7 +188,10 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
                             return data;
                         }}
                     }},
-                    {{ data: 'Total' }}
+                    {{ 
+                        data: 'Total',
+                        className: 'numeric-cell'
+                    }}
                 ],
                 createdRow: function(row, data, dataIndex) {{
                     if (data.folder === 'Total') {{
@@ -183,16 +217,12 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
 
 # Example usage:
 if __name__ == "__main__":
-    # Create sample DataFrame
+    # Create sample DataFrame with missing columns
     sample_data = {
         'folder_name': ['East', 'West'],
         'Live: Active': [5, 3],
-        'Live: Paused': [4, 2],
         'Live: Complete': [10, 8],
-        'Live: Canceled': [1, 0],
         'Planning': [8, 5],
-        'Rehearsal: Active': [2, 1],
-        'Rehearsal: Paused': [11, 6]
     }
     
     df = pd.DataFrame(sample_data)
