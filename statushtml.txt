@@ -7,17 +7,10 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
     """
     Generate an HTML page with a DataTable showing status summaries from a pandas DataFrame.
     Missing required columns will be automatically created and filled with zeros.
+    Features grouped headers for Live and Rehearsal statuses.
     
     Args:
-        df: Pandas DataFrame containing status data. Required columns:
-            - folder_name
-            - Planning
-            - Live: Active
-            - Live: Paused
-            - Live: Complete
-            - Live: Canceled
-            - Rehearsal: Active
-            - Rehearsal: Paused
+        df: Pandas DataFrame containing status data
         output_path: Path where the HTML file should be saved
     """
     # Make a copy of the DataFrame to avoid modifying the original
@@ -83,6 +76,15 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
         .numeric-cell {{
             text-align: right;
         }}
+        thead tr th {{
+            text-align: center;
+        }}
+        .top-header {{
+            border-bottom: none !important;
+        }}
+        .bottom-header {{
+            border-top: none !important;
+        }}
     </style>
 </head>
 <body>
@@ -91,16 +93,20 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
         <table id="statusTable" class="table table-striped table-bordered">
             <thead>
                 <tr>
-                    <th>Folder</th>
-                    <th>Planning</th>
-                    <th>Live: Active</th>
-                    <th>Live: Paused</th>
-                    <th>Live: Complete</th>
-                    <th>Live: Canceled</th>
-                    <th>Rehearsal: Active</th>
-                    <th>Rehearsal: Paused</th>
-                    <th>% Complete</th>
-                    <th>Total</th>
+                    <th rowspan="2" class="align-middle">Folder</th>
+                    <th rowspan="2" class="align-middle">Planning</th>
+                    <th colspan="4" class="text-center top-header">Live</th>
+                    <th colspan="2" class="text-center top-header">Rehearsal</th>
+                    <th rowspan="2" class="align-middle">% Complete</th>
+                    <th rowspan="2" class="align-middle">Total</th>
+                </tr>
+                <tr>
+                    <th class="bottom-header">Active</th>
+                    <th class="bottom-header">Paused</th>
+                    <th class="bottom-header">Complete</th>
+                    <th class="bottom-header">Canceled</th>
+                    <th class="bottom-header">Active</th>
+                    <th class="bottom-header">Paused</th>
                 </tr>
             </thead>
             <tbody>
@@ -214,18 +220,3 @@ def generate_status_page(df: pd.DataFrame, output_path: str = "status_summary.ht
     # Write the HTML file
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write(html_template)
-
-# Example usage:
-if __name__ == "__main__":
-    # Create sample DataFrame with missing columns
-    sample_data = {
-        'folder_name': ['East', 'West'],
-        'Live: Active': [5, 3],
-        'Live: Complete': [10, 8],
-        'Planning': [8, 5],
-    }
-    
-    df = pd.DataFrame(sample_data)
-    
-    # Generate the HTML page
-    generate_status_page(df, "status_summary.html")
