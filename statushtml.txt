@@ -1,0 +1,184 @@
+from typing import List, Dict
+from pathlib import Path
+import json
+
+def generate_status_page(data: List[Dict], output_path: str = "status_summary.html") -> None:
+    """
+    Generate an HTML page with a DataTable showing status summaries.
+    
+    Args:
+        data: List of dictionaries containing status data for each folder
+        output_path: Path where the HTML file should be saved
+    """
+    
+    # Convert data to JavaScript array string
+    json_data = json.dumps(data, indent=4)
+    
+    html_template = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Summary</title>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    
+    <!-- DataTables JS -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+
+    <style>
+        .progress {{
+            height: 20px;
+            min-width: 150px;
+        }}
+        .progress-bar {{
+            transition: width 0.6s ease;
+        }}
+        .status-group {{
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }}
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Status Summary by Folder</h2>
+        <table id="statusTable" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>Folder</th>
+                    <th>Planning</th>
+                    <th>Live: Active</th>
+                    <th>Live: Paused</th>
+                    <th>Live: Complete</th>
+                    <th>Live: Canceled</th>
+                    <th>Rehearsal: Active</th>
+                    <th>Rehearsal: Paused</th>
+                    <th>% Complete</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const rawData = {json_data};
+
+        // Calculate totals and add completion percentage
+        const tableData = rawData.map(row => {{
+            // Calculate total
+            const total = Object.values(row).reduce((sum, val) => 
+                typeof val === 'number' ? sum + val : sum, 0);
+
+            // Calculate completion percentage based on Live statuses only
+            const liveTotal = row["Live: Active"] + row["Live: Paused"] + 
+                            row["Live: Complete"] + row["Live: Canceled"];
+            const percentComplete = liveTotal === 0 ? 0 : 
+                ((row["Live: Complete"] / liveTotal) * 100).toFixed(1);
+
+            return {{
+                ...row,
+                "folder": row.folder_name,
+                "percentComplete": percentComplete,
+                "Total": total
+            }};
+        }});
+
+        $(document).ready(function() {{
+            $('#statusTable').DataTable({{
+                data: tableData,
+                columns: [
+                    {{ data: 'folder' }},
+                    {{ data: 'Planning' }},
+                    {{ data: 'Live: Active' }},
+                    {{ data: 'Live: Paused' }},
+                    {{ data: 'Live: Complete' }},
+                    {{ data: 'Live: Canceled' }},
+                    {{ data: 'Rehearsal: Active' }},
+                    {{ data: 'Rehearsal: Paused' }},
+                    {{ 
+                        data: 'percentComplete',
+                        render: function(data, type, row) {{
+                            if (type === 'display') {{
+                                let colorClass = 'bg-danger';
+                                if (data >= 70) colorClass = 'bg-success';
+                                else if (data >= 40) colorClass = 'bg-warning';
+
+                                return `<div class="progress">
+                                         <div class="progress-bar ${{colorClass}}" 
+                                              role="progressbar" 
+                                              style="width: ${{data}}%;" 
+                                              aria-valuenow="${{data}}" 
+                                              aria-valuemin="0" 
+                                              aria-valuemax="100">
+                                           ${{data}}%
+                                         </div>
+                                       </div>`;
+                            }}
+                            return data;
+                        }}
+                    }},
+                    {{ data: 'Total' }}
+                ],
+                createdRow: function(row, data, dataIndex) {{
+                    if (data.folder === 'Total') {{
+                        $(row).addClass('table-secondary fw-bold');
+                    }}
+                }},
+                pageLength: 10,
+                ordering: true,
+                searching: true,
+                responsive: true,
+                dom: 'Bfrtip',
+                info: true,
+                order: [[0, 'asc']]
+            }});
+        }});
+    </script>
+</body>
+</html>"""
+
+    # Write the HTML file
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_template)
+
+# Example usage:
+if __name__ == "__main__":
+    # Sample data
+    sample_data = [
+        {
+            "folder_name": "East",
+            "Live: Active": 5,
+            "Live: Paused": 4,
+            "Live: Complete": 10,
+            "Live: Canceled": 1,
+            "Planning": 8,
+            "Rehearsal: Active": 2,
+            "Rehearsal: Paused": 11
+        },
+        {
+            "folder_name": "West",
+            "Live: Active": 3,
+            "Live: Paused": 2,
+            "Live: Complete": 8,
+            "Live: Canceled": 0,
+            "Planning": 5,
+            "Rehearsal: Active": 1,
+            "Rehearsal: Paused": 6
+        }
+    ]
+    
+    # Generate the HTML page
+    generate_status_page(sample_data, "status_summary.html")
