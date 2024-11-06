@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataTables with Grouped Columns and Centered Titles</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- DataTables CSS -->
+    <!-- Bootstrap 5.3.2 CSS (latest stable) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- DataTables 1.13.6 CSS -->
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
     <style>
-        /* Center align the stream titles over the 3 sub-columns */
         th {
             text-align: center;
         }
@@ -26,116 +25,16 @@
 
 </div>
 
-<!-- Bootstrap 5 JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- jQuery -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- DataTables JS -->
+<!-- Bootstrap 5.3.2 JS (latest stable) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- jQuery 3.7.0 (latest stable) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<!-- DataTables 1.13.6 JS -->
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
 <script>
-    // Define the streams JSON structure with dynamic column titles
-    const streams = ["Test 1", "Test 2", "Test 3"]; // Can vary
-
-    // Define the data JSON structure with folders, subfolders, scripts, and test values
-    const data = [
-        { "folder": "folder1", "subfolder_name": "sub1", "script": "script1.php", "test_1_start": "08:00", "test_1_end": "09:00", "test_1_tasks": "5", "test_2_start": "09:15", "test_2_end": "10:00", "test_2_tasks": "7", "test_3_start": "10:30", "test_3_end": "11:15", "test_3_tasks": "4" },
-        { "folder": "folder1", "subfolder_name": "sub2", "script": "script2.js", "test_1_start": "08:30", "test_1_end": "09:45", "test_1_tasks": "6", "test_2_start": "10:00", "test_2_end": "10:45", "test_2_tasks": "8", "test_3_start": "11:30", "test_3_end": "12:00", "test_3_tasks": "5" },
-        { "folder": "folder2", "subfolder_name": "sub1", "script": "script3.py", "test_1_start": "07:30", "test_1_end": "08:30", "test_1_tasks": "4", "test_2_start": "09:00", "test_2_end": "09:50", "test_2_tasks": "7", "test_3_start": "10:00", "test_3_end": "10:45", "test_3_tasks": "6" }
-    ];
-
-    // Group data by folder
-    function groupDataByFolder(data) {
-        return data.reduce((acc, item) => {
-            // If the folder doesn't exist in the accumulator, initialize it
-            if (!acc[item.folder]) {
-                acc[item.folder] = [];
-            }
-            // Push the current item into the respective folder group
-            acc[item.folder].push(item);
-            return acc;
-        }, {});
-    }
-
-    // Function to generate tables for each folder
-    function generateTables() {
-        const folderGroups = groupDataByFolder(data);
-        const container = $('#tables-container');
-
-        // Loop through each folder group
-        for (const folder in folderGroups) {
-            const folderData = folderGroups[folder];
-
-            // Create a new table for each folder
-            const tableId = `table-${folder}`;
-            container.append(`
-                <h3 class="mt-4">${folder}</h3>
-                <table id="${tableId}" class="table table-striped" style="width:100%">
-                    <thead>
-                        <tr class="stream-header-row"></tr>
-                        <tr class="subheader-row"></tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            `);
-
-            // Populate the current table with data
-            populateTable(`#${tableId}`, folderData);
-        }
-    }
-
-    // Function to dynamically generate headers and populate table rows for each folder
-    function populateTable(tableSelector, folderData) {
-        const table = $(tableSelector);
-        const theadStreamHeader = table.find('.stream-header-row');
-        const theadSubHeader = table.find('.subheader-row');
-        const tbody = table.find('tbody');
-
-        // Generate the main headers (subfolder, script name) and dynamic stream headers with colspan
-        let streamHeaderRow = '<th rowspan="2">Subfolder</th><th rowspan="2">Script Name</th>';
-        let subHeaderRow = '';
-
-        // Loop through streams and generate main and subheaders
-        streams.forEach((stream, index) => {
-            // For each stream (e.g., Test 1), create a grouped header with 3 sub-columns
-            streamHeaderRow += `<th colspan="3">${stream}</th>`;
-            subHeaderRow += `<th>Start</th><th>End</th><th>Tasks Complete</th>`;
-        });
-
-        // Append the header rows to the table head
-        theadStreamHeader.html(streamHeaderRow);
-        theadSubHeader.html(subHeaderRow);
-
-        // Populate table rows with folder-specific data
-        folderData.forEach(item => {
-            let row = `<tr>
-                <td>${item.subfolder_name}</td>
-                <td>${item.script}</td>`;
-
-            // Add each stream's Start, End, and Tasks Complete values dynamically
-            streams.forEach((stream, index) => {
-                const testStartKey = `test_${index + 1}_start`;
-                const testEndKey = `test_${index + 1}_end`;
-                const testTasksKey = `test_${index + 1}_tasks`;
-
-                row += `<td>${item[testStartKey]}</td>`;
-                row += `<td>${item[testEndKey]}</td>`;
-                row += `<td>${item[testTasksKey]}</td>`;
-            });
-
-            row += `</tr>`;
-            tbody.append(row);
-        });
-
-        // Initialize DataTables for the current table
-        table.DataTable();
-    }
-
-    $(document).ready(function() {
-        // Generate tables and populate them
-        generateTables();
-    });
+// Your JavaScript code
 </script>
 
 </body>
