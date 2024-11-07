@@ -20,13 +20,7 @@
         td {
             white-space: normal;
         }
-        .runbook-link {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+        
         .startend-column {
             width: 30%;
         }
@@ -191,7 +185,7 @@
                     <tr>
                         <td>${item.CRQ_number}</td>
                         <td>${item.subfolder_name}</td>
-                        <td class="runbook-link">${item.runbook_http_link}</td>
+                        <td>${item.runbook_http_link}</td>
                         <td>${item.runbook_stage_display}</td>
                         <td>${item.runbook_start_display}</td>
                         <td>${item.runbook_end_display}</td>
