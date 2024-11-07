@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTables with Grouped Columns and Centered Titles</title>
+
+    <!-- Bootstrap 5.3.2 CSS (latest stable) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- DataTables 1.13.6 CSS -->
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+
+    <style>
+        /* Center align the stream titles over the 3 sub-columns */
+        th {
+            text-align: left;
+        }
+        td {
+            white-space: normal;
+        }
+        .runbook-link {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .startend-column {
+            width: 30%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Folders and Subfolders with Dynamic Streams and Centered Subheaders</h2>
+        <!-- The tables will be dynamically generated here -->
+        <div id="tables-container"></div>
+    </div>
+
+    <!-- jQuery 3.7.0 (latest stable) -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- DataTables 1.13.6 JS -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    <!-- Bootstrap 5.3.2 JS (latest stable) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Define the streams array
+        const streams = [
+            "Code installation",
+            "Technical certification",
+            "Business certification"
+        ];
+
+        // Define the data structure
+        const data = [
+            {
+                "runbook_name": "R2024.11.3 GCIBT CSOT RM",
+                "folder_name": "CSOT-CashPro",
+                "subfolder_name": "11697-CPOnline",
+                "CRQ_number": "CRQ000013674460",
+                "runbook_http_link": '<a href="https://bankofamerica.cutover.com/#/app/GBT/runbooks/17338/current_version/tasks/dashboard/1/" target="_blank">R2024.11.3 GCIBT ESOT RM</a>',
+                "runbook_stage_display": "Planning",
+                "runbook_start_display": "Nov 15 08:00",
+                "runbook_end_display": "Nov 17 07:05",
+                "runbook_tasks_count_display": "0/64",
+                "comments": "",
+                "Start_Code_installation_task_start_display_ET": "Nov 15 10:00",
+                "End_Code_installation_task_end_display_ET": "Nov 17 06:05",
+                "Start_Technical_certification_task_start_display_ET": "Nov 15 16:05",
+                "Code_installation_tasks_count_display": "0/44",
+                "End_Technical_certification_task_end_display_ET": "Nov 16 17:45",
+                "Technical_certification_tasks_count_display": "0/7",
+                "Start_Business_certification_task_start_display_ET": "Nov 15 17:05",
+                "End_Business_certification_task_end_display_ET": "Nov 17 07:05",
+                "Business_certification_tasks_count_display": "0/8"
+            },
+            {
+                "runbook_name": "R2024.11.3 GCIBT CSOT RM",
+                "folder_name": "CSOT-CashPro 2",
+                "subfolder_name": "11697-CPOnline",
+                "CRQ_number": "CRQ000013674460",
+                "runbook_http_link": '<a href="https://bankofamerica.cutover.com/#/app/GBT/runbooks/17338/current_version/tasks/dashboard/1/" target="_blank">R2024.11.3 GCIBT ESOT RM</a>',
+                "runbook_stage_display": "Planning",
+                "runbook_start_display": "Nov 15 08:00",
+                "runbook_end_display": "Nov 17 07:05",
+                "runbook_tasks_count_display": "0/64",
+                "comments": "",
+                "Start_Code_installation_task_start_display_ET": "Nov 15 10:00",
+                "End_Code_installation_task_end_display_ET": "Nov 17 06:05",
+                "Start_Technical_certification_task_start_display_ET": "Nov 15 16:05",
+                "Code_installation_tasks_count_display": "0/44",
+                "End_Technical_certification_task_end_display_ET": "Nov 16 17:45",
+                "Technical_certification_tasks_count_display": "0/7",
+                "Start_Business_certification_task_start_display_ET": "Nov 15 17:05",
+                "End_Business_certification_task_end_display_ET": "Nov 17 07:05",
+                "Business_certification_tasks_count_display": "0/8"
+            },
+            {
+                "runbook_name": "R2024.11.3 GCIBT CSOT RM 2",
+                "folder_name": "CSOT-CashPro 2",
+                "subfolder_name": "11697-CPOnline",
+                "CRQ_number": "CRQ000013674461",
+                "runbook_http_link": '<a href="https://bankofamerica.cutover.com/#/app/GBT/runbooks/17338/current_version/tasks/dashboard/1/" target="_blank">R2024.11.3 GCIBT ESOT RM</a>',
+                "runbook_stage_display": "Planning",
+                "runbook_start_display": "Nov 15 08:00",
+                "runbook_end_display": "Nov 17 07:05",
+                "runbook_tasks_count_display": "0/64",
+                "comments": "",
+                "Start_Code_installation_task_start_display_ET": "Nov 15 10:00",
+                "End_Code_installation_task_end_display_ET": "Nov 17 06:05",
+                "Start_Technical_certification_task_start_display_ET": "Nov 15 16:05",
+                "Code_installation_tasks_count_display": "0/44",
+                "End_Technical_certification_task_end_display_ET": "Nov 16 17:45",
+                "Technical_certification_tasks_count_display": "0/7",
+                "Start_Business_certification_task_start_display_ET": "Nov 15 17:05",
+                "End_Business_certification_task_end_display_ET": "Nov 17 07:05",
+                "Business_certification_tasks_count_display": "0/8"
+            },
+            // Rest of the data omitted for brevity
+        ];
+
+        // Group data by folder
+        function groupDataByFolder(data) {
+            return data.reduce((acc, item) => {
+                if (!acc[item.folder_name]) {
+                    acc[item.folder_name] = [];
+                }
+                acc[item.folder_name].push(item);
+                return acc;
+            }, {});
+        }
+
+        // Function to generate tables for each folder
+        function generateTables() {
+            const folderGroups = groupDataByFolder(data);
+            const container = $('#tables-container');
+
+            for (const folderName in folderGroups) {
+                const folderData = folderGroups[folderName];
+                const tableId = `table-${folderName.replace(/\s/g, '-')}`;
+                
+                container.append(`
+                    <h3 class="mt-4">${folderName}</h3>
+                    <table id="${tableId}" class="table table-striped" style="width:100%">
+                        <thead>
+                            <tr class="stream-header-row"></tr>
+                            <tr class="subheader-row"></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                `);
+
+                populateTable(`#${tableId}`, folderData);
+            }
+        }
+
+        // Function to populate table with data
+        function populateTable(tableSelector, folderData) {
+            const table = $(tableSelector);
+            const theadStreamHeader = table.find('.stream-header-row');
+            const theadSubHeader = table.find('.subheader-row');
+            const tbody = table.find('tbody');
+
+            // Generate header rows - making sure colspan matches subheader columns
+            let streamHeaderRow = '<th rowspan="2">CRQ</th><th rowspan="2">AIT</th><th colspan="5">Runbook</th>';
+            let subHeaderRow = '<th>Dashboard</th><th>Stage</th><th>Start</th><th>End&nbsp;&nbsp;</th><th>Tasks complete</th>';
+
+            // Add stream headers
+            streams.forEach(stream => {
+                streamHeaderRow += `<th colspan="3">${stream}</th>`;
+                subHeaderRow += '<th>Start</th><th>End&nbsp;&nbsp;</th><th>Tasks Complete</th>';
+            });
+
+            // Add Comments header at the end
+            streamHeaderRow += '<th rowspan="2">Comments</th>';
+
+            // Apply headers
+            theadStreamHeader.html(streamHeaderRow);
+            theadSubHeader.html(subHeaderRow);
+
+            // Populate table rows - ensuring exact match with header columns
+            folderData.forEach(item => {
+                // Start building the row with the first 7 columns (CRQ, AIT, and 5 Runbook columns)
+                let row = `
+                    <tr>
+                        <td>${item.CRQ_number}</td>
+                        <td>${item.subfolder_name}</td>
+                        <td class="runbook-link">${item.runbook_http_link}</td>
+                        <td>${item.runbook_stage_display}</td>
+                        <td>${item.runbook_start_display}</td>
+                        <td>${item.runbook_end_display}</td>
+                        <td>${item.runbook_tasks_count_display}</td>
+                `;
+
+                // Add stream data (3 columns per stream)
+                streams.forEach(stream => {
+                    const streamKey = stream.replace(/ /g, '_');
+                    const streamStartKey = `Start_${streamKey}_task_start_display_ET`;
+                    const streamEndKey = `End_${streamKey}_task_end_display_ET`;
+                    const streamTasksKey = `${streamKey}_tasks_count_display`;
+
+                    row += `
+                        <td>${item[streamStartKey]}</td>
+                        <td>${item[streamEndKey]}</td>
+                        <td>${item[streamTasksKey]}</td>
+                    `;
+                });
+
+                // Add Comments column
+                row += `<td>${item.comments}</td></tr>`;
+                tbody.append(row);
+            });
+
+
+
+            // Initialize DataTable
+            table.DataTable({
+                columnDefs: [
+                    { "targets": "_all", "className": "text-left", orderable: false },
+                    ...streams.map((stream, index) => ({
+                    "targets": [index * 3 + 4, index * 3 + 5], // start and end columns
+                    "className": "startend-column"
+                }))
+                ]
+            });
+        }
+
+        $(document).ready(function() {
+            generateTables();
+        });
+    </script>
+</body>
+</html>
