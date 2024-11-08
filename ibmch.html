@@ -1,0 +1,183 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>IBM Gantt Chart Simple Demo</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.21.0/vis.min.js"></script>
+  <style>
+    html, * {
+      font-family: 'Open Sans';
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background-color: #f0f0f0;
+    }
+    .container {
+      margin: 50px auto;
+      max-width: 960px;
+      background-color: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #gantt-chart {
+      height: 450px;
+    }
+    .vis-item.vis-background {
+      background-color: #f5f5f5;
+    }
+    .vis-item.vis-range {
+      background-color: #4CAF50;
+      border-color: #4CAF50;
+      color: white;
+    }
+    .zoom-buttons {
+      margin-top: 10px;
+      text-align: right;
+    }
+    .zoom-buttons button {
+      margin-left: 5px;
+    }
+  </style>
+  <script>
+    // Minimal Gantt chart implementation
+    class Gantt {
+      constructor(containerSelector, data) {
+        this.container = document.querySelector(containerSelector);
+        this.data = data;
+        this.init();
+      }
+
+      init() {
+        this.container.innerHTML = '<div id="gantt-chart"></div><div class="zoom-buttons"><button id="zoom-in">+</button><button id="zoom-out">-</button></div>';
+        this.chartContainer = this.container.querySelector('#gantt-chart');
+        this.zoomInButton = this.container.querySelector('#zoom-in');
+        this.zoomOutButton = this.container.querySelector('#zoom-out');
+        this.drawChart();
+        this.setupZoomButtons();
+      }
+
+      drawChart() {
+        const items = [];
+        const groups = new vis.DataSet();
+
+        this.data.forEach(item => {
+          groups.add({ id: item.id, content: item.name });
+
+          item.activities.forEach(activity => {
+            items.push({
+              id: activity.id,
+              group: item.id,
+              content: activity.name,
+              start: new Date(activity.start),
+              end: new Date(activity.end),
+              type: 'range',
+              className: activity.name.toLowerCase().replace(/\s/g, '-')
+            });
+          });
+        });
+
+        const options = {
+          type: 'range',
+          start: new Date(items[0].start),
+          end: new Date(items[items.length - 1].end),
+          orientation: 'top',
+          stack: true,
+          zoomMin: 1000 * 60 * 60 * 24, // 1 day
+          zoomMax: 1000 * 60 * 60 * 24 * 31 * 12, // 1 year
+          moveable: true,
+          height: '100%',
+          groupOrder: 'content',
+          order: function (a, b) {
+            return a.start - b.start;
+          },
+          margin: {
+            item: 10,
+            axis: 10
+          },
+          editable: false,
+          showCurrentTime: true,
+          showTooltips: true,
+          tooltip: {
+            followMouse: true,
+            overflowMethod: 'cap'
+          }
+        };
+
+        this.timeline = new vis.Timeline(this.chartContainer, items, groups, options);
+      }
+
+      setupZoomButtons() {
+        this.zoomInButton.addEventListener('click', () => {
+          this.timeline.zoomIn(0.2);
+        });
+
+        this.zoomOutButton.addEventListener('click', () => {
+          this.timeline.zoomOut(0.2);
+        });
+      }
+    }
+
+    // Sample data
+    const data = [
+      {
+        id: 'NURSES+Anne',
+        name: 'Anne',
+        activities: [
+          {
+            id: 'SHIFTS+Emergency+Monday+2+8',
+            name: 'Emergency',
+            start: 1474880400000,
+            end: 1474902000000,
+          },
+        ],
+      },
+      {
+        id: 'NURSES+Bethanie',
+        name: 'Bethanie',
+        activities: [],
+      },
+      {
+        id: 'NURSES+Betsy',
+        name: 'Betsy',
+        activities: [
+          {
+            id: 'SHIFTS+Emergency+Wednesday+12+18',
+            name: 'Emergency',
+            start: 1475089200000,
+            end: 1475110800000,
+          },
+          {
+            id: 'SHIFTS+Emergency+Saturday+12+20',
+            name: 'Emergency',
+            start: 1475348400000,
+            end: 1475377200000,
+          },
+          {
+            id: 'SHIFTS+Consultation+Friday+8+12',
+            name: 'Consultation',
+            start: 1475247600000,
+            end: 1475262000000,
+          },
+        ],
+      },
+      // Additional nurse data omitted for brevity
+    ];
+
+    // Initialize the Gantt chart
+    document.addEventListener('DOMContentLoaded', () => {
+      new Gantt('.container', data);
+    });
+  </script>
+</head>
+<body>
+  <div class="container">
+    <h1>IBM Gantt Chart Simple Demo</h1>
+    <div id="gantt-chart"></div>
+  </div>
+</body>
+</html>
