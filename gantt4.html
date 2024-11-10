@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart Example</title>
+    <!-- Include dhtmlxGantt CDN -->
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+    <style>
+        html, body {
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        #gantt_here {
+            width: 100%;
+            height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="gantt_here"></div>
+
+    <script>
+        // Configure Gantt chart's date format
+        gantt.config.date_format = "%Y-%m-%d %H:%i:%s";
+
+        // Disable the plus sign for adding child tasks
+        gantt.config.buttons_left = null;
+
+        // Create a date formatter that includes hours and minutes
+        var dateToStr = gantt.date.date_to_str("%Y-%m-%d %H:%i");
+
+        // Custom rendering of the Start Time and End Time columns to include hours and minutes
+        gantt.config.columns = [
+            { name: "text", label: "Task Name", tree: true, width: 200 },
+            {
+                name: "start_date", label: "Start Time", align: "center", width: 150,
+                template: function (task) {
+                    return dateToStr(task.start_date); // Display start date with time
+                }
+            },
+            {
+                name: "end_date", label: "End Time", align: "center", width: 150,
+                template: function (task) {
+                    return dateToStr(task.end_date); // Display end date with time
+                }
+            }
+        ];
+
+        // Initialize Gantt chart
+        gantt.init("gantt_here");
+
+        // Helper function to convert ISO 8601 dates to Gantt-compatible format
+        function isoToGanttDate(isoString) {
+            var date = new Date(isoString);
+            var day = String(date.getUTCDate()).padStart(2, '0');
+            var month = String(date.getUTCMonth() + 1).padStart(2, '0'); // Months are zero-based
+            var year = date.getUTCFullYear();
+            var hours = String(date.getUTCHours()).padStart(2, '0');
+            var minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            var seconds = String(date.getUTCSeconds()).padStart(2, '0');
+
+            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // Task data in JSON format with ISO 8601 dates
+        var tasks = {
+            data: [
+                { id: 1, text: "Task 1", start_date: "2024-12-03T01:00:45Z", end_date: "2024-12-04T01:00:45Z" },
+                { id: 2, text: "Task 2", start_date: "2024-12-04T03:00:45Z", end_date: "2024-12-06T01:00:45Z" },
+                { id: 3, text: "Task 3", start_date: "2024-12-05T08:00:45Z", end_date: "2024-12-07T01:00:45Z" },
+                { id: 4, text: "Task 4", start_date: "2024-12-06T10:00:45Z", end_date: "2024-12-09T01:00:45Z" },
+                { id: 5, text: "Task 5", start_date: "2024-12-08T12:00:45Z", end_date: "2024-12-10T01:00:45Z" },
+                { id: 6, text: "Task 6", start_date: "2024-12-09T02:00:45Z", end_date: "2024-12-11T01:00:45Z" }
+            ]
+        };
+
+        // Convert the ISO 8601 dates to Gantt's expected format
+        tasks.data.forEach(task => {
+            task.start_date = isoToGanttDate(task.start_date);
+            task.end_date = isoToGanttDate(task.end_date);
+        });
+
+        // Load the task data into the Gantt chart
+        gantt.parse(tasks);
+    </script>
+</body>
+</html>
