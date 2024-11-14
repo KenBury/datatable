@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gantt Chart with Hours and Minutes in Start and End Time</title>
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+    <style>
+        #controls {
+            margin: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div id="controls">
+    <button onclick="zoomOut()">Zoom Out</button>
+    <button onclick="zoomIn()">Zoom In</button>
+</div>
+<div id="gantt_here" style="width:100%; height:400px;"></div>
+
+<script>
+    // Sample tasks with start_date in '%b %d %H:%M' format and duration in seconds (10-minute tasks)
+    var tasks = {
+        data: [
+            {id: 1, text: "Task #1", start_date: "Nov 13 09:30", duration: 600},   // 10 minutes
+            {id: 2, text: "Task #2", start_date: "Nov 13 10:00", duration: 600},   // 10 minutes
+            {id: 3, text: "Task #3", start_date: "Nov 13 11:30", duration: 600},   // 10 minutes
+            {id: 4, text: "Task #4", start_date: "Nov 13 12:00", duration: 600},   // 10 minutes
+            {id: 5, text: "Task #5", start_date: "Nov 13 14:30", duration: 600},   // 10 minutes
+            {id: 6, text: "Task #6", start_date: "Nov 13 15:00", duration: 600}    // 10 minutes
+        ]
+    };
+
+    // Helper function to convert '%b %d %H:%M' to ISO format
+    function convertToISO(dateStr) {
+        const months = {"Jan": 0, "Feb": 1, "Mar": 2, "Apr": 3, "May": 4, "Jun": 5, 
+                        "Jul": 6, "Aug": 7, "Sep": 8, "Oct": 9, "Nov": 10, "Dec": 11};
+
+        const parts = dateStr.split(" ");
+        const month = months[parts[0]];   // Month part (e.g., Nov -> 10)
+        const day = parseInt(parts[1]);   // Day part (e.g., 13)
+        const timeParts = parts[2].split(":");
+        const hours = parseInt(timeParts[0]);  // Hours (e.g., 14)
+        const minutes = parseInt(timeParts[1]);  // Minutes (e.g., 30)
+
+        const now = new Date();
+        const year = now.getFullYear(); // Use current year, adjust if needed
+        const date = new Date(year, month, day, hours, minutes);
+
+        return date.toISOString().slice(0, 16).replace("T", " ");
+    }
+
+    // Convert start_date before rendering Gantt
+    tasks.data.forEach(function (task) {
+        task.start_date = convertToISO(task.start_date);
+    });
+
+    // Gantt chart configuration to use seconds as the duration unit
+    gantt.config.duration_unit = "minute";  // Set the base duration unit to minute (closest to seconds)
+    gantt.config.duration_step = 1 / 60;    // Set the step to 1 second (1/60 of a minute)
+    
+    gantt.config.scale_unit = "minute";     // Default time scale in minutes
+    gantt.config.date_scale = "%H:%i";      // Format time as HH:MM for the time axis
+
+    // Set date-time format for task grid columns (start date and end date)
+    gantt.config.date_grid = "%Y-%m-%d %H:%i";  // Display in YYYY-MM-DD HH:MM
+    gantt.config.task_date = "%Y-%m-%d %H:%i";  // Same format for tasks
+
+    // Configure the task list to show the start and end time
+    gantt.config.columns = [
+        {name: "text", label: "Task", width: "*", tree: true},
+        {name: "start_date", label: "Start Time", width: 150, align: "center", template: gantt.templates.date_grid},
+        {name: "end_date", label: "End Time", width: 150, align: "center", template: function (task) {
+            return gantt.templates.date_grid(task.end_date);  // Gantt automatically calculates end_date
+        }}
+    ];
+
+    // Zoom control functions
+    function zoomIn() {
+        gantt.ext.zoom.zoomIn();
+    }
+
+    function zoomOut() {
+        gantt.ext.zoom.zoomOut();
+    }
+
+    // Zoom levels definition
+    gantt.ext.zoom.init({
+        levels: [
+            {name: "minute", scale_unit: "minute", step: 5, scale_height: 27, date_scale: "%H:%i"},
+            {name: "hour", scale_unit: "hour", step: 1, scale_height: 50, date_scale: "%H:%i"},
+            {name: "day", scale_unit: "day", step: 1, scale_height: 50, date_scale: "%M %d"},
+            {name: "week", scale_unit: "week", step: 1, scale_height: 50, date_scale: "Week %W"}
+        ]
+    });
+
+    // Initialize Gantt chart and load tasks
+    gantt.init("gantt_here");
+    gantt.parse(tasks);
+</script>
+
+</body>
+</html>
