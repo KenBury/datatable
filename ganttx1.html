@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DHTMLX Gantt with Folder Grouping and Zoom</title>
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    <link href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .gantt-container {
+            height: 600px;
+            width: 100%;
+        }
+        .folder_row {
+            font-weight: bold;
+            background-color: #f4f7f4;
+        }
+        .subfolder_row {
+            font-weight: bold;
+            background-color: #f9f9f9;
+        }
+        .zoom-bar {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-bottom: 1px solid #cecece;
+        }
+        .zoom-bar button {
+            padding: 5px 10px;
+            margin: 0 3px;
+            cursor: pointer;
+            border: 1px solid #cecece;
+            background-color: #fff;
+            border-radius: 4px;
+        }
+        .zoom-bar button:hover {
+            background-color: #e9e9e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="zoom-bar">
+        <button onclick="zoomToFit()">Zoom To Fit</button>
+        <button onclick="setDayScale()">Days</button>
+        <button onclick="setWeekScale()">Weeks</button>
+        <button onclick="setMonthScale()">Months</button>
+        <button onclick="setQuarterScale()">Quarters</button>
+        <button onclick="setYearScale()">Years</button>
+    </div>
+    <div class="gantt-container" id="gantt_here"></div>
+    
+    <script>
+        // Configure the columns in the grid
+        gantt.config.columns = [
+            {name: "text", label: "Task name", tree: true, width: 200},
+            {name: "folder", label: "Folder", align: "center", width: 100},
+            {name: "subfolder", label: "Subfolder", align: "center", width: 100},
+            {name: "start_date", label: "Start", align: "center", width: 80},
+            {name: "owner", label: "Owner", align: "center", width: 80},
+            {name: "priority", label: "Priority", align: "center", width: 80},
+            {name: "duration", label: "Duration", align: "center", width: 60}
+        ];
+
+        // Enable grouping
+        gantt.config.group_tasks = true;
+        gantt.config.show_progress = true;
+
+        // Scale configuration
+        const scaleConfigs = {
+            day: {
+                scale_unit: "day",
+                date_scale: "%d %M",
+                subscales: [
+                    {unit: "hour", step: 6, date: "%H:00"}
+                ],
+                scale_height: 50,
+                min_column_width: 50
+            },
+            week: {
+                scale_unit: "week",
+                date_scale: "Week #%W",
+                subscales: [
+                    {unit: "day", step: 1, date: "%D"}
+                ],
+                scale_height: 50,
+                min_column_width: 50
+            },
+            month: {
+                scale_unit: "month",
+                date_scale: "%F, %Y",
+                subscales: [
+                    {unit: "week", step: 1, date: "Week #%W"}
+                ],
+                scale_height: 50,
+                min_column_width: 120
+            },
+            quarter: {
+                scale_unit: "month",
+                date_scale: "%M",
+                subscales: [
+                    {unit: "month", step: 1, date: "%M"}
+                ],
+                scale_height: 50,
+                min_column_width: 90
+            },
+            year: {
+                scale_unit: "year",
+                date_scale: "%Y",
+                subscales: [
+                    {unit: "month", step: 1, date: "%M"}
+                ],
+                scale_height: 50,
+                min_column_width: 30
+            }
+        };
+
+        function setScale(scale) {
+            const cfg = scaleConfigs[scale];
+            gantt.config.scale_unit = cfg.scale_unit;
+            gantt.config.date_scale = cfg.date_scale;
+            gantt.config.subscales = cfg.subscales;
+            gantt.config.scale_height = cfg.scale_height;
+            gantt.config.min_column_width = cfg.min_column_width;
+            gantt.render();
+        }
+
+        function setDayScale() {
+            setScale('day');
+        }
+
+        function setWeekScale() {
+            setScale('week');
+        }
+
+        function setMonthScale() {
+            setScale('month');
+        }
+
+        function setQuarterScale() {
+            setScale('quarter');
+        }
+
+        function setYearScale() {
+            setScale('year');
+        }
+
+        function zoomToFit() {
+            // Get the earliest start date and latest end date
+            let minDate = null;
+            let maxDate = null;
+            
+            gantt.eachTask(function(task) {
+                if (!minDate || task.start_date < minDate) {
+                    minDate = task.start_date;
+                }
+                const endDate = gantt.calculateEndDate(task);
+                if (!maxDate || endDate > maxDate) {
+                    maxDate = endDate;
+                }
+            });
+
+            // Add some padding
+            minDate = gantt.date.add(minDate, -1, 'day');
+            maxDate = gantt.date.add(maxDate, 1, 'day');
+
+            // Calculate the appropriate scale
+            const totalDays = Math.ceil((maxDate - minDate) / (24 * 60 * 60 * 1000));
+            
+            if (totalDays <= 7) {
+                setDayScale();
+            } else if (totalDays <= 30) {
+                setWeekScale();
+            } else if (totalDays <= 90) {
+                setMonthScale();
+            } else if (totalDays <= 365) {
+                setQuarterScale();
+            } else {
+                setYearScale();
+            }
+
+            // Adjust the time range
+            gantt.config.start_date = minDate;
+            gantt.config.end_date = maxDate;
+            
+            gantt.render();
+        }
+
+        // Initialize the Gantt chart
+        gantt.init("gantt_here");
+
+        // Function to create folder structure
+        function createFolderStructure(tasks) {
+            const folders = new Map();
+            const result = {
+                data: [],
+                links: tasks.links
+            };
+
+            tasks.data.forEach(task => {
+                const folderId = `folder_${task.folder.replace(/\s+/g, '_')}`;
+                const subfolderId = `subfolder_${task.folder}_${task.subfolder}`.replace(/\s+/g, '_');
+
+                if (!folders.has(folderId)) {
+                    folders.set(folderId, new Set());
+                    result.data.push({
+                        id: folderId,
+                        text: task.folder,
+                        type: 'folder',
+                        render: 'folder',
+                        open: true,
+                        duration: 0,
+                        progress: 0
+                    });
+                }
+
+                if (!folders.get(folderId).has(subfolderId)) {
+                    folders.get(folderId).add(subfolderId);
+                    result.data.push({
+                        id: subfolderId,
+                        text: task.subfolder,
+                        parent: folderId,
+                        type: 'subfolder',
+                        render: 'subfolder',
+                        open: true,
+                        duration: 0,
+                        progress: 0
+                    });
+                }
+
+                result.data.push({
+                    ...task,
+                    parent: subfolderId
+                });
+            });
+
+            return result;
+        }
+
+        // Sample data with custom fields
+        const tasks = {
+            data: [
+                {
+                    id: 1, 
+                    text: "Project Kickoff",
+                    start_date: "2024-11-15",
+                    duration: 3,
+                    owner: "John",
+                    priority: "High",
+                    progress: 0.6,
+                    folder: "Planning",
+                    subfolder: "Initiation"
+                },
+                {
+                    id: 2,
+                    text: "Requirements Analysis",
+                    start_date: "2024-11-18",
+                    duration: 5,
+                    owner: "Sarah",
+                    priority: "Medium",
+                    progress: 0.4,
+                    folder: "Planning",
+                    subfolder: "Analysis"
+                },
+                {
+                    id: 3,
+                    text: "Database Design",
+                    start_date: "2024-11-20",
+                    duration: 4,
+                    owner: "Mike",
+                    priority: "High",
+                    progress: 0.2,
+                    folder: "Development",
+                    subfolder: "Design"
+                },
+                {
+                    id: 4,
+                    text: "Frontend Development",
+                    start_date: "2024-11-22",
+                    duration: 7,
+                    owner: "Lisa",
+                    priority: "Medium",
+                    progress: 0.3,
+                    folder: "Development",
+                    subfolder: "Implementation"
+                },
+                {
+                    id: 5,
+                    text: "Backend API Development",
+                    start_date: "2024-11-22",
+                    duration: 6,
+                    owner: "Tom",
+                    priority: "High",
+                    progress: 0.1,
+                    folder: "Development",
+                    subfolder: "Implementation"
+                },
+                {
+                    id: 6,
+                    text: "Unit Testing",
+                    start_date: "2024-11-25",
+                    duration: 4,
+                    owner: "Jane",
+                    priority: "Medium",
+                    progress: 0,
+                    folder: "Testing",
+                    subfolder: "Quality Assurance"
+                }
+            ],
+            links: [
+                {id: 1, source: 1, target: 2, type: "0"},
+                {id: 2, source: 2, target: 3, type: "0"},
+                {id: 3, source: 3, target: 4, type: "0"},
+                {id: 4, source: 3, target: 5, type: "0"},
+                {id: 5, source: 4, target: 6, type: "0"},
+                {id: 6, source: 5, target: 6, type: "0"}
+            ]
+        };
+
+        // Custom row styling
+        gantt.templates.grid_row_class = function(start, end, task) {
+            if (task.type === 'folder') return 'folder_row';
+            if (task.type === 'subfolder') return 'subfolder_row';
+            return '';
+        };
+
+        // Add tooltip to show all custom fields
+        gantt.templates.tooltip_text = function(start, end, task) {
+            if (task.type === 'folder' || task.type === 'subfolder') return task.text;
+            return `<b>Task:</b> ${task.text}<br/>
+                    <b>Folder:</b> ${task.folder}<br/>
+                    <b>Subfolder:</b> ${task.subfolder}<br/>
+                    <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
+                    <b>Owner:</b> ${task.owner}<br/>
+                    <b>Priority:</b> ${task.priority}<br/>
+                    <b>Progress:</b> ${Math.round(task.progress * 100)}%`;
+        };
+
+        // Create the folder structure and load the data
+        const structuredTasks = createFolderStructure(tasks);
+        gantt.parse(structuredTasks);
+
+        // Initial fit to view
+        zoomToFit();
+    </script>
+</body>
+</html>
