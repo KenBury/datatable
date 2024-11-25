@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PyScript Form</title>
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css" />
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #2c5282;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #cbd5e0;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[readonly] {
+            background-color: #edf2f7;
+        }
+        button {
+            background-color: #4299e1;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #3182ce;
+        }
+        .section-divider {
+            border-top: 2px solid #e2e8f0;
+            margin: 20px 0;
+        }
+        #saveMessage {
+            margin-top: 10px;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Input Section -->
+        <div class="input-section">
+            <div class="form-group">
+                <label for="input1">Input 1</label>
+                <input type="text" id="input1">
+            </div>
+            <div class="form-group">
+                <label for="input2">Input 2</label>
+                <input type="text" id="input2">
+            </div>
+            <div class="form-group">
+                <label for="input3">Input 3</label>
+                <input type="text" id="input3">
+            </div>
+            <div class="form-group">
+                <label for="input4">Input 4</label>
+                <input type="text" id="input4">
+            </div>
+            <div class="form-group">
+                <label for="input5">Input 5</label>
+                <input type="text" id="input5">
+            </div>
+            <button py-click="update_values()" id="submitButton">Submit</button>
+        </div>
+
+        <div class="section-divider"></div>
+
+        <!-- Output Section -->
+        <div class="output-section">
+            <div class="form-group">
+                <label for="output1">Output 1</label>
+                <input type="text" id="output1">
+            </div>
+            <div class="form-group">
+                <label for="output2">Output 2</label>
+                <input type="text" id="output2" readonly>
+            </div>
+            <button py-click="save_results()" id="saveButton">Save</button>
+            <div id="saveMessage"></div>
+        </div>
+    </div>
+
+    <py-script>
+    from js import document
+
+    def update_values():
+        # Get input values
+        input1 = document.getElementById('input1').value
+        input2 = document.getElementById('input2').value
+        input3 = document.getElementById('input3').value
+        input4 = document.getElementById('input4').value
+        input5 = document.getElementById('input5').value
+        
+        # Join the inputs with a space separator
+        combined_output = " ".join([input1, input2, input3, input4, input5])
+        
+        # Update first output field
+        document.getElementById('output1').value = combined_output
+
+    def save_results():
+        document.getElementById('saveMessage').innerHTML = "Results saved successfully!"
+    </py-script>
+</body>
+</html>
