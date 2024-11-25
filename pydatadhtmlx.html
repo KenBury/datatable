@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Gantt</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.css">
+    <link rel="stylesheet" href="https://pyscript.net/latest/pyscript.css">
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.dhtmlx.com/gantt/edge/dhtmlxgantt.js"></script>
+    <script defer src="https://pyscript.net/latest/pyscript.js"></script>
+
+    <style>
+        .gantt-container {
+            height: 500px;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .control-panel {
+            margin: 20px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #taskTable {
+            width: 100% !important;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        #taskTable th,
+        #taskTable td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #taskTable th {
+            background-color: #f5f5f5;
+        }
+        .control-panel label {
+            margin-right: 10px;
+        }
+        .control-panel button {
+            padding: 5px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            height: 30px;
+        }
+        .control-panel button:hover {
+            background-color: #0056b3;
+        }
+        input[type="datetime-local"] {
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            width: 200px;
+            height: 30px;
+        }
+    </style>
+
+    <script>
+        $(document).ready(function() {
+            const now = new Date();
+            const dateTimeString = now.toISOString().slice(0, 16);
+            $("#scheduleUpdate").val(dateTimeString);
+
+            $("#scheduleUpdate").on('change', function() {
+                console.log("DateTime changed:", this.value);
+                updateSchedule();
+            });
+
+            $("#updateBtn").on('click', function() {
+                console.log("Update button clicked");
+                updateSchedule();
+            });
+        });
+
+        function updateSchedule() {
+            console.log("updateSchedule called");
+            pyscript.interpreter.globals.get('update_schedule')();
+        }
+    </script>
+</head>
+<body>
+    <div class="control-panel">
+        <label for="scheduleUpdate">Schedule Update:</label>
+        <input type="datetime-local"
+               id="scheduleUpdate"
+               name="scheduleUpdate">
+        <button id="updateBtn" py-click="update_schedule">Update Schedule</button>
+    </div>
+
+    <table id="taskTable" class="display">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Task</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Duration (min)</th>
+                <th>Offset (min)</th>
+                <th>Predecessors</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div id="gantt_here" class="gantt-container"></div>
+
+    <py-script>
+import sys
+from datetime import datetime, timedelta
+from js import document, gantt, jQuery, console, JSON
+import json
+
+def log(message):
+    print(message)
+    console.log(message)
+
+task_data = {
+    "tasks": [
+        {"id": 1, "text": "Task A", "offset": "0",   "duration": 120, "predecessors": []},
+        {"id": 2, "text": "Task B", "offset": "150", "duration": 180, "predecessors": [1]},
+        {"id": 3, "text": "Task C", "offset": "300", "duration": 90,  "predecessors": [1]},
+        {"id": 4, "text": "Task D", "offset": "390", "duration": 240, "predecessors": [2, 3]}
+    ]
+}
+
+def prepare_data(schedule_date=None):
+    try:
+        log(f"prepare_data called with schedule_date: {schedule_date}")
+        tasks = [task.copy() for task in task_data["tasks"]]
+        
+        if schedule_date:
+            if 'T' in schedule_date:
+                schedule_date = schedule_date.replace('T', ' ')
+            base_date = datetime.fromisoformat(schedule_date)
+            log(f"Base date parsed: {base_date}")
+            
+            for task in tasks:
+                offset_minutes = int(task["offset"])
+                start_time = base_date + timedelta(minutes=offset_minutes)
+                end_time = start_time + timedelta(minutes=task["duration"])
+                
+                task["start_date"] = start_time.strftime("%Y-%m-%d %H:%M")
+                task["end_date"] = end_time.strftime("%Y-%m-%d %H:%M")
+
+        # Create a list to store all links
+        links = []
+        link_id = 1
+        
+        # Generate links for all tasks
+        for task in tasks:
+            for pred in task["predecessors"]:
+                links.append({
+                    "id": link_id,
+                    "source": pred,
+                    "target": task["id"],
+                    "type": "0"
+                })
+                link_id += 1
+
+        gantt_data = {
+            "data": [
+                {
+                    "id": task["id"],
+                    "text": task["text"],
+                    "start_date": datetime.strptime(task["start_date"], "%Y-%m-%d %H:%M").strftime("%d-%m-%Y %H:%M"),
+                    "duration": task["duration"]
+                } for task in tasks if "start_date" in task
+            ],
+            "links": links
+        }
+        
+        log(f"Generated links: {links}")
+        return tasks, gantt_data
+    except Exception as e:
+        log(f"Error in prepare_data: {str(e)}")
+        raise
+
+def update_table(tasks):
+    try:
+        table = jQuery('#taskTable').DataTable()
+        table.destroy()
+    except Exception as e:
+        log(f"Error destroying table: {str(e)}")
+        
+    try:
+        tbody = document.getElementById('taskTable').getElementsByTagName('tbody')[0]
+        tbody.innerHTML = ""
+        
+        for task in tasks:
+            row = document.createElement('tr')
+            cells_data = [
+                task["id"],
+                task["text"],
+                task.get("start_date", ""),
+                task.get("end_date", ""),
+                task["duration"],
+                task["offset"],
+                ", ".join(map(str, task["predecessors"])) if task["predecessors"] else ""
+            ]
+            
+            for cell_data in cells_data:
+                td = document.createElement('td')
+                td.textContent = str(cell_data)
+                row.appendChild(td)
+                
+            tbody.appendChild(row)
+
+        jQuery('#taskTable').DataTable()
+    except Exception as e:
+        log(f"Error updating table: {str(e)}")
+        raise
+
+def update_schedule(event=None):
+    try:
+        log("update_schedule called")
+        schedule_input = document.getElementById('scheduleUpdate')
+        schedule_date = schedule_input.value
+        log(f"Selected datetime: {schedule_date}")
+        
+        if not schedule_date:
+            log("No date selected")
+            return
+            
+        tasks, gantt_data = prepare_data(schedule_date)
+        log(f"Tasks updated: {len(tasks)}")
+        
+        update_table(tasks)
+        gantt.clearAll()
+        gantt.parse(json.dumps(gantt_data))
+        log("Update completed successfully")
+    except Exception as e:
+        log(f"Error in update_schedule: {str(e)}")
+
+def initialize_page():
+    try:
+        log("Initializing page")
+        
+        gantt.config.scale_unit = "hour"
+        gantt.config.duration_unit = "minute"
+        gantt.config.date_scale = "%H:%i"
+        gantt.config.duration_step = 1
+        gantt.config.scale_height = 27
+        
+        subscales_config = JSON.parse('''[
+            {"unit": "minute", "step": 30, "date": "%H:%i"}
+        ]''')
+        gantt.config.subscales = subscales_config
+        
+        now = datetime.now()
+        schedule_input = document.getElementById('scheduleUpdate')
+        schedule_input.value = now.strftime('%Y-%m-%dT%H:%M')
+        
+        gantt.init("gantt_here")
+        log("Gantt initialized")
+        
+        tasks, gantt_data = prepare_data(now.strftime('%Y-%m-%d %H:%M'))
+        update_table(tasks)
+        gantt.parse(json.dumps(gantt_data))
+        log("Initial data loaded")
+    except Exception as e:
+        log(f"Error in initialize_page: {str(e)}")
+
+initialize_page()
+    </py-script>
+</body>
+</html>
