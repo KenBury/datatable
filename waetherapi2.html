@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather by ZIP Code</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.11.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.11.1/core.js"></script>
+</head>
+<body class="flex items-center justify-center min-h-screen bg-gray-100">
+    <div class="p-6 max-w-sm mx-auto bg-white rounded-xl shadow-md space-y-4">
+        <div>
+            <label for="zipcode" class="text-sm text-gray-600">Enter ZIP code</label>
+            <input type="text" id="zipcode" placeholder="28269" class="w-full p-2 border border-gray-300 rounded mt-1">
+        </div>
+        <button id="submitButton" class="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700">Get Weather</button>
+        <div id="location_output" class="p-4 bg-gray-100 rounded shadow"></div>
+        <div id="weather_output" class="p-4 bg-gray-100 rounded shadow"></div>
+    </div>
+
+    <py-script>
+import asyncio
+import json
+from pyscript import fetch, document
+
+async def fetch_location(zipcode):
+    url = f"https://api.zippopotam.us/us/{zipcode}"
+    try:
+        response = await fetch(url, method="GET")
+        data = await response.json()
+        return data
+    except Exception as e:
+        return {"error": str(e)}
+
+async def fetch_weather(lat, lon):
+    url = f"https://api.weather.gov/points/{lat},{lon}"
+    try:
+        response = await fetch(url, method="GET")
+        data = await response.json()
+        
+        if "properties" in data:
+            forecast_url = data['properties']['forecast']
+            forecast_response = await fetch(forecast_url, method="GET")
+            forecast_data = await forecast_response.json()
+            return forecast_data
+        else:
+            return {"error": data.get("detail", "Location not found")}
+    except Exception as e:
+        return {"error": str(e)}
+
+def display_location(location_data):
+    output = document.querySelector("#location_output")
+    if "error" in location_data:
+        output.innerHTML = f"Error: {location_data['error']}"
+        return None, None
+    
+    try:
+        place = location_data.get('places', [{}])[0]
+        lat = place.get('latitude')
+        lon = place.get('longitude')
+        
+        output.innerHTML = f"""
+            <h2 class="text-xl font-semibold">{location_data.get('place name', 'N/A')}</h2>
+            <p>State: {location_data.get('state', 'N/A')}</p>
+            <p>Latitude: {lat}</p>
+            <p>Longitude: {lon}</p>
+        """
+        return lat, lon
+    except Exception as e:
+        output.innerHTML = f"Error processing location data: {str(e)}"
+        return None, None
+
+def display_weather(weather_data):
+    output = document.querySelector("#weather_output")
+    if "error" in weather_data:
+        output.innerHTML = f"Error: {weather_data['error']}"
+    else:
+        periods = weather_data.get('properties', {}).get('periods', [])
+        if periods:
+            period = periods[0]  # Get current period
+            output.innerHTML = f"""
+                <h2 class="text-xl font-semibold">{period.get('name', 'N/A')}</h2>
+                <p>Temperature: {period.get('temperature', 'N/A')}°F</p>
+                <p>Weather: {period.get('shortForecast', 'N/A')}</p>
+                <p>Wind: {period.get('windSpeed', 'N/A')} {period.get('windDirection', '')}</p>
+                <p>Detailed: {period.get('detailedForecast', 'N/A')}</p>
+            """
+        else:
+            output.innerHTML = "No weather data available."
+
+async def on_submit(event):
+    zipcode = document.querySelector("#zipcode").value
+    if zipcode:
+        # First get location data
+        location_data = await fetch_location(zipcode)
+        lat, lon = display_location(location_data)
+        
+        # Then get weather if we have coordinates
+        if lat and lon:
+            weather_data = await fetch_weather(lat, lon)
+            display_weather(weather_data)
+
+def setup():
+    submit_button = document.querySelector("#submitButton")
+    submit_button.onclick = on_submit
+
+setup()
+    </py-script>
+</body>
+</html>
