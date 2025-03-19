@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>XML Data Table</title>
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+</head>
+<body>
+    <table id="xmlTable" class="display">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Value</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <script type="text/xml" id="xmlData">
+        <data>
+            <item>
+                <name>Item 1</name>
+                <value>Value 1</value>
+            </item>
+            <item>
+                <name>Item 2</name>
+                <value>Value 2</value>
+            </item>
+        </data>
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var xml = $.parseXML($("#xmlData").text());
+            var data = $(xml).find("item").map(function () {
+                return {
+                    name: $(this).find("name").text(),
+                    value: $(this).find("value").text()
+                };
+            }).get();
+
+            var table = $('#xmlTable').DataTable({});
+            data.forEach(function (item) {
+                table.row.add([item.name, item.value]).draw();
+            });
+        });
+    </script>
+</body>
+
+</html>
