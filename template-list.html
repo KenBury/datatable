@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template List</title>
+
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/rowgroup/1.4.1/css/rowGroup.dataTables.min.css">
+
+    <!-- jQuery and DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/rowgroup/1.4.1/js/dataTables.rowGroup.min.js"></script>
+
+    <style>
+        .dtrg-group {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            padding: 10px !important;
+        }
+
+        .dtrg-group td {
+            padding: 10px !important;
+        }
+
+        .workspace-selector {
+            margin: 20px 0;
+            padding: 8px;
+            font-size: 16px;
+            min-width: 200px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Template List</h1>
+
+        <select id="workspaceFilter" class="workspace-selector">
+            <option value="">All Workspaces</option>
+        </select>
+
+        <table id="templateTable" class="display responsive nowrap" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Workspace</th>
+                    <th>Workspace ID</th>
+                    <th>Template ID</th>
+                    <th>Template Name</th>
+                    <th>Version</th>
+                    <th>Template Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Will be populated by DataTables -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // Function to generate template URL
+            function generateTemplateUrl(workspaceId, templateId, version) {
+                return `tb_${workspaceId}_${templateId}_${version}.html`;
+            }
+            
+            // Raw XML data as a string
+            const xmlString = `
+            <data>
+                <workspaces>
+                    <workspace>
+                        <id>111</id>
+                        <name>EET Legacy</name>
+                    </workspace>
+                    <workspace>
+                        <id>183</id>
+                        <name>GCRP</name>
+                    </workspace>
+                    <workspace>
+                        <id>108</id>
+                        <name>GBT</name>
+                    </workspace>
+                    <workspace>
+                        <id>71</id>
+                        <name>CTI</name>
+                    </workspace>
+                    <workspace>
+                        <id>4</id>
+                        <name>GMT</name>
+                    </workspace>
+                    <workspace>
+                        <id>107</id>
+                        <name>CBWT</name>
+                    </workspace>
+                    <workspace>
+                        <id>1</id>
+                        <name>zCutover</name>
+                    </workspace>
+                    <workspace>
+                        <id>110</id>
+                        <name>ERFT</name>
+                    </workspace>
+                    <workspace>
+                        <id>149</id>
+                        <name>CFO</name>
+                    </workspace>
+                    <workspace>
+                        <id>115</id>
+                        <name>GOCRS</name>
+                    </workspace>
+                    <workspace>
+                        <id>2</id>
+                        <name>Sandbox</name>
+                    </workspace>
+                    <workspace>
+                        <id>37</id>
+                        <name>GRBC</name>
+                    </workspace>
+                    <workspace>
+                        <id>114</id>
+                        <name>ETS</name>
+                    </workspace>
+                    <workspace>
+                        <id>112</id>
+                        <name>DMT</name>
+                    </workspace>
+                    <workspace>
+                        <id>113</id>
+                        <name>EET</name>
+                    </workspace>
+                    <workspace>
+                        <id>150</id>
+                        <name>APSE</name>
+                    </workspace>
+                    <workspace>
+                        <id>116</id>
+                        <name>GIS</name>
+                    </workspace>
+                    <workspace>
+                        <id>109</id>
+                        <name>GMOT</name>
+                    </workspace>
+                </workspaces>
+                <templates>
+                    <template>
+                        <id>14845</id>
+                        <version>5</version>
+                        <workspaceid>108</workspaceid>
+                        <name>Ryyyy.mm.work &amp; ARP 1622 Description/CHQ Summary CRQ#</name>
+                        <filename>108_14845_5.html</filename>
+                    </template>
+                    <template>
+                        <id>1484</id>
+                        <version>5</version>
+                        <workspaceid>108</workspaceid>
+                        <name>Ryyyy.mm.work &amp; ARP 1233 Description/CHQ Summary CRQ#</name>
+                        <filename>108_1484_5.html</filename>
+                    </template>
+                    <template>
+                        <id>8585</id>
+                        <version>1</version>
+                        <workspaceid>4</workspaceid>
+                        <name>Test Runbook</name>
+                        <filename>4_8585_1.html</filename>
+                    </template>
+                </templates>
+            </data>`;
+            
+            // Parse XML
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+            
+            // Workspace lookup
+            const workspaceLookup = {};
+            
+            // Build workspace lookup and populate dropdown
+            const workspaceSelect = $('#workspaceFilter');
+            $(xmlDoc).find('workspace').each(function() {
+                const id = $(this).find('id').text();
+                const name = $(this).find('name').text();
+                workspaceLookup[id] = name;
+                
+                // Add to dropdown
+                workspaceSelect.append(
+                    $('<option>', {
+                        value: id,
+                        text: name
+                    })
+                );
+            });
+            
+            // Prepare data for DataTables
+            const tableData = [];
+            $(xmlDoc).find('template').each(function() {
+                const workspaceId = $(this).find('workspaceid').text();
+                const templateId = $(this).find('id').text();
+                const version = $(this).find('version').text();
+                const name = $(this).find('name').text();
+                const workspaceName = workspaceLookup[workspaceId] || workspaceId;
+                const url = generateTemplateUrl(workspaceId, templateId, version);
+                
+                tableData.push([
+                    workspaceName,      // Workspace name (for display and grouping)
+                    workspaceId,        // Workspace ID (hidden, for filtering)
+                    templateId,         // Template ID
+                    name,               // Template name
+                    version,            // Version
+                    `<a href="${url}" class="template-link">View Template</a>` // Link
+                ]);
+            });
+            
+            // Initialize DataTable
+            const table = $('#templateTable').DataTable({
+                data: tableData,
+                responsive: true,
+                order: [[0, 'asc'], [2, 'asc']], // Sort by workspace name, then template ID
+                rowGroup: {
+                    dataSrc: 0 // Group by workspace name
+                },
+                columnDefs: [
+                    { visible: false, targets: 0 }, // Hide workspace name column (used for grouping)
+                    { visible: false, targets: 1 }  // Hide workspace ID column (used for filtering)
+                ]
+            });
+            
+            // Add workspace filter functionality
+            $('#workspaceFilter').on('change', function() {
+                const selectedWorkspace = $(this).val();
+                
+                if (!selectedWorkspace) {
+                    // Show all templates
+                    table.column(1).search('').draw();
+                } else {
+                    // Filter by exact workspace ID match
+                    table.column(1).search('^' + $.fn.dataTable.util.escapeRegex(selectedWorkspace) + '$', true, false).draw();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
