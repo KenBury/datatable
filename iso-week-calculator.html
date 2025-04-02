@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISO YYYY-Www Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4aa8e8;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #3a98d8;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e9f7ef;
+            border-radius: 4px;
+            font-size: 18px;
+            text-align: center;
+            display: none;
+        }
+        .current-date {
+            text-align: center;
+            color: #666;
+            margin-top: 20px;
+        }
+        .debug-info {
+            margin-top: 15px;
+            font-size: 12px;
+            color: #666;
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ISO YYYY-Www Calculator</h1>
+        
+        <div class="input-group">
+            <label for="date-input">Select a Date:</label>
+            <input type="date" id="date-input">
+        </div>
+        
+        <button onclick="calculateISOWeek()">Calculate ISO Week</button>
+        
+        <div id="result"></div>
+        <div id="debug-info" class="debug-info"></div>
+        
+        <p class="current-date" id="current-date"></p>
+    </div>
+
+    <script>
+        // Set default date to today
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            document.getElementById('date-input').value = `${year}-${month}-${day}`;
+            
+            // Display current date
+            document.getElementById('current-date').textContent = 
+                `Today is ${today.toLocaleDateString()}`;
+                
+            // Calculate ISO week for today as default
+            calculateISOWeek();
+        });
+
+        function calculateISOWeek() {
+            // Get the input date value
+            const dateInputValue = document.getElementById('date-input').value;
+            
+            if (!dateInputValue) {
+                alert('Please select a date');
+                return;
+            }
+            
+            // Create a new Date object for the selected date
+            const [year, month, day] = dateInputValue.split('-').map(num => parseInt(num, 10));
+            const selectedDate = new Date(year, month - 1, day);
+            
+            // Calculate ISO week
+            const { year: isoYear, week: isoWeek } = getISOWeekYearAndWeek(selectedDate);
+            
+            // Format the result as yyyy-Www
+            const formattedResult = `${isoYear}-W${String(isoWeek).padStart(2, '0')}`;
+            
+            // Display the result
+            const resultElement = document.getElementById('result');
+            resultElement.textContent = `ISO Week: ${formattedResult}`;
+            resultElement.style.display = 'block';
+        }
+
+        function getISOWeekYearAndWeek(date) {
+            // Create a copy of the date to avoid modifying the original
+            const target = new Date(date);
+            
+            // Get day of week: 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+            // Convert to ISO day of week: 1 = Monday, ..., 7 = Sunday
+            const dayOfWeek = target.getDay() || 7;
+            
+            // Adjust date to the nearest Thursday (ISO weeks are defined by their Thursday)
+            target.setDate(target.getDate() + (4 - dayOfWeek));
+            
+            // Get the year of this Thursday
+            const thursdayYear = target.getFullYear();
+            
+            // Get January 1st of the Thursday's year
+            const firstDayOfYear = new Date(thursdayYear, 0, 1);
+            
+            // Calculate days between Thursday and January 1st, accounting for leap years, etc.
+            const daysToThursday = Math.floor((target - firstDayOfYear) / (24 * 60 * 60 * 1000));
+            
+            // Calculate week number: days / 7 + 1 (adding 1 because we start with week 1, not 0)
+            const weekNumber = Math.floor(daysToThursday / 7) + 1;
+            
+            return {
+                year: thursdayYear,
+                week: weekNumber
+            };
+        }
+    </script>
+</body>
+</html>
