@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Team - DG Sync App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .workspace-select, .dg-name {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .workspace-select label, .dg-name label {
+      margin-right: 10px;
+    }
+
+    .workspace-select select, .dg-name input {
+      padding: 5px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .member-lists {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-gap: 20px;
+    }
+
+    .member-list {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+    }
+
+    .member-list h3 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .member-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    .member-list li {
+      margin-bottom: 5px;
+    }
+
+    .member-email {
+      font-style: italic;
+      color: #666;
+    }
+
+    .sync-button-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 20px;
+    }
+
+    .sync-button {
+      margin-bottom: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .sync-button:hover {
+      background-color: #45a049;
+    }
+
+    .external-emails {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      font-style: italic;
+      color: #666;
+      white-space: pre-line;
+      margin-bottom: 10px;
+    }
+
+    .copy-button {
+      padding: 5px 10px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .copy-button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Central Team - DG Sync App</h1>
+
+    <div class="workspace-select">
+      <label for="workspace-dropdown">Select Workspace:</label>
+      <select id="workspace-dropdown">
+        <option value="">Choose a workspace</option>
+        <option value="workspace1">Workspace 1</option>
+        <option value="workspace2">Workspace 2</option>
+        <option value="workspace3">Workspace 3</option>
+        <!-- Add more workspace options as needed -->
+      </select>
+    </div>
+
+    <div class="dg-name">
+      <label for="dg-name-input">DG Name:</label>
+      <input type="text" id="dg-name-input" placeholder="Enter DG name">
+    </div>
+
+    <div class="member-lists">
+      <div class="member-list">
+        <h3>Matched Central Team members</h3>
+        <ul>
+          <li>
+            Member 1
+            <div class="member-email">member1@example.com</div>
+          </li>
+          <li>
+            Member 2
+            <div class="member-email">member2@example.com</div>
+          </li>
+          <li>
+            Member 3
+            <div class="member-email">member3@example.com</div>
+          </li>
+          <!-- Add more matched members using APIs -->
+        </ul>
+      </div>
+
+      <div class="member-list">
+        <h3>Central Team members to be removed</h3>
+        <ul>
+          <li>
+            User 4
+            <div class="member-email">user4@example.com</div>
+          </li>
+          <li>
+            User 5
+            <div class="member-email">user5@example.com</div>
+          </li>
+          <li>
+            User 6
+            <div class="member-email">user6@example.com</div>
+          </li>
+          <!-- Add more cutover users not found in DG as needed -->
+        </ul>
+      </div>
+
+      <div class="member-list">
+        <h3>DG Members not found in Cutover workspace</h3>
+        <ul>
+          <li>
+            Member 7
+            <div class="member-email">member7@example.com</div>
+          </li>
+          <li>
+            Member 8
+            <div class="member-email">member8@example.com</div>
+          </li>
+          <li>
+            Member 9
+            <div class="member-email">member9@example.com</div>
+          </li>
+          <!-- Add more external members not matched as needed -->
+        </ul>
+      </div>
+    </div>
+
+    <div class="sync-button-container">
+      <button class="sync-button">Update central team</button>
+      <div class="external-emails" id="external-emails">
+        member7@example.com,
+        member8@example.com,
+        member9@example.com
+      </div>
+      <button class="copy-button" onclick="copyEmails()">Copy emails for bulk ARM request</button>
+    </div>
+
+    <script>
+      function copyEmails() {
+        const emailsElement = document.getElementById('external-emails');
+        const emailsText = emailsElement.textContent;
+        navigator.clipboard.writeText(emailsText);
+        alert('Emails copied to clipboard!');
+      }
+    </script>
+  </div>
+</body>
+</html>
