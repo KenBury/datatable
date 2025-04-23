@@ -214,6 +214,9 @@
         navigator.clipboard.writeText(emailsText);
         alert('Emails copied to clipboard!');
       }
+      document.getElementById('workspace-dropdown').addEventListener('change', function() {
+    document.getElementById('dg-name-input').value = '';
+  });
     </script>
   </div>
 </body>
