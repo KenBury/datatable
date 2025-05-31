@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BPMN Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .quiz-container {
+            background-color: #ffffff;
+            border-radius: 16px; /* More rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Softer shadow */
+            padding: 32px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .question-text {
+            font-size: 1.5rem; /* Larger font for questions */
+            font-weight: 600;
+            color: #1a202c; /* Darker text */
+            margin-bottom: 24px;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .option-button {
+            background-color: #edf2f7; /* Light gray for options */
+            color: #2d3748; /* Dark gray text */
+            padding: 14px 20px;
+            border-radius: 10px; /* Rounded buttons */
+            border: 2px solid #e2e8f0; /* Subtle border */
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.2s ease-in-out;
+            text-align: left;
+        }
+        .option-button:hover:not(.selected):not(.correct):not(.incorrect) {
+            background-color: #e2e8f0; /* Slightly darker on hover */
+            border-color: #cbd5e0;
+        }
+        .option-button.selected {
+            border-color: #63b3ed; /* Blue border for selected */
+            background-color: #ebf8ff; /* Light blue background for selected */
+        }
+        .option-button.correct {
+            background-color: #d4edda; /* Green for correct */
+            border-color: #48bb78;
+            color: #276749;
+        }
+        .option-button.incorrect {
+            background-color: #fbd3da; /* Red for incorrect */
+            border-color: #e53e3e;
+            color: #9b2c2c;
+        }
+        .feedback-message {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-top: 16px;
+            min-height: 24px; /* Ensure space even when empty */
+        }
+        .feedback-message.correct-feedback {
+            color: #38a169; /* Green text */
+        }
+        .feedback-message.incorrect-feedback {
+            color: #e53e3e; /* Red text */
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .nav-button {
+            background-color: #4299e1; /* Blue button */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            flex-grow: 1;
+        }
+        .nav-button:hover {
+            background-color: #3182ce; /* Darker blue on hover */
+        }
+        .nav-button:disabled {
+            background-color: #a0aec0; /* Gray when disabled */
+            cursor: not-allowed;
+        }
+        .score-container {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2b6cb0; /* Darker blue for score */
+            margin-top: 24px;
+        }
+        .restart-button {
+            background-color: #38b2ac; /* Teal for restart */
+            color: white;
+            padding: 14px 28px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: background-color 0.2s ease-in-out;
+            margin-top: 24px;
+        }
+        .restart-button:hover {
+            background-color: #319795; /* Darker teal on hover */
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .quiz-container {
+                padding: 24px;
+                gap: 16px;
+            }
+            .question-text {
+                font-size: 1.25rem;
+            }
+            .option-button {
+                font-size: 1rem;
+                padding: 12px 16px;
+            }
+            .nav-button, .restart-button {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+            .navigation-buttons {
+                flex-direction: column; /* Stack buttons on small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">BPMN Quiz</h1>
+
+        <div id="question-section">
+            <p id="question-text" class="question-text"></p>
+            <div id="options-container" class="options-container">
+                </div>
+            <p id="feedback-message" class="feedback-message"></p>
+            <div class="navigation-buttons">
+                <button id="submit-answer-button" class="nav-button">Submit Answer</button>
+                <button id="next-question-button" class="nav-button" disabled>Next Question</button>
+            </div>
+        </div>
+
+        <div id="result-section" class="hidden">
+            <p class="score-container">Your Score: <span id="score-display">0</span> / <span id="total-questions"></span></p>
+            <button id="restart-quiz-button" class="restart-button">Restart Quiz</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of BPMN quiz questions
+        const questions = [
+            {
+                question: "What does BPMN stand for?",
+                options: [
+                    "Business Process Management Notation",
+                    "Business Process Modeling Notation",
+                    "Business Project Management Network",
+                    "Basic Process Mapping Notation"
+                ],
+                answer: "Business Process Modeling Notation"
+            },
+            {
+                question: "Which of the following is a 'Flow Object' in BPMN?",
+                options: [
+                    "Pool",
+                    "Lane",
+                    "Task",
+                    "Data Object"
+                ],
+                answer: "Task"
+            },
+            {
+                question: "What does a 'Sequence Flow' represent in BPMN?",
+                options: [
+                    "The flow of data between activities",
+                    "The order in which activities are performed",
+                    "An association between an artifact and a flow object",
+                    "A message exchange between participants"
+                ],
+                answer: "The order in which activities are performed"
+            },
+            {
+                question: "Which gateway type allows for multiple paths to be taken concurrently?",
+                options: [
+                    "Exclusive Gateway",
+                    "Inclusive Gateway",
+                    "Parallel Gateway",
+                    "Event-Based Gateway"
+                ],
+                answer: "Parallel Gateway"
+            },
+            {
+                question: "In BPMN, what is the purpose of a 'Pool'?",
+                options: [
+                    "To group related tasks within a process",
+                    "To represent a participant in a process",
+                    "To indicate a decision point",
+                    "To store process data"
+                ],
+                answer: "To represent a participant in a process"
+            },
+            {
+                question: "What is the symbol for a 'Start Event' in BPMN?",
+                options: [
+                    "A circle with a thick border",
+                    "A circle with a single thin border",
+                    "A circle with a double thin border",
+                    "A square with rounded corners"
+                ],
+                answer: "A circle with a single thin border"
+            },
+            {
+                question: "Which of these is NOT a type of 'Task' in BPMN?",
+                options: [
+                    "Service Task",
+                    "Receive Task",
+                    "Manual Task",
+                    "Decision Task"
+                ],
+                answer: "Decision Task"
+            },
+            {
+                question: "What does a 'Message Flow' connect?",
+                options: [
+                    "Activities within the same pool",
+                    "Flow objects within the same lane",
+                    "Participants in different pools",
+                    "Data objects to activities"
+                ],
+                answer: "Participants in different pools"
+            },
+            {
+                question: "Which BPMN element is used to represent an external entity or system that interacts with the process?",
+                options: [
+                    "Lane",
+                    "Pool",
+                    "Data Store",
+                    "Message Event"
+                ],
+                answer: "Pool"
+            },
+            {
+                question: "What is the primary goal of using BPMN?",
+                options: [
+                    "To automate business processes",
+                    "To provide a standard notation for process modeling",
+                    "To manage project timelines",
+                    "To analyze financial performance"
+                ],
+                answer: "To provide a standard notation for process modeling"
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+        let quizActive = true; // State to control quiz flow
+
+        // Get DOM elements
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const submitAnswerButton = document.getElementById('submit-answer-button');
+        const nextQuestionButton = document.getElementById('next-question-button');
+        const questionSection = document.getElementById('question-section');
+        const resultSection = document.getElementById('result-section');
+        const scoreDisplay = document.getElementById('score-display');
+        const totalQuestionsDisplay = document.getElementById('total-questions');
+        const restartQuizButton = document.getElementById('restart-quiz-button');
+
+        /**
+         * Loads and displays the current question and its options.
+         */
+        function loadQuestion() {
+            // Clear previous state
+            optionsContainer.innerHTML = '';
+            feedbackMessage.textContent = '';
+            feedbackMessage.className = 'feedback-message'; // Reset classes
+            submitAnswerButton.disabled = false;
+            nextQuestionButton.disabled = true;
+            selectedOption = null;
+            quizActive = true; // Allow interaction for the new question
+
+            const currentQuestion = questions[currentQuestionIndex];
+            questionTextElement.textContent = `${currentQuestionIndex + 1}. ${currentQuestion.question}`;
+
+            // Create option buttons
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-button');
+                button.addEventListener('click', () => selectOption(button, option));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        /**
+         * Handles the selection of an option by the user.
+         * @param {HTMLButtonElement} button - The button element that was clicked.
+         * @param {string} optionText - The text content of the selected option.
+         */
+        function selectOption(button, optionText) {
+            if (!quizActive) return; // Prevent selection if quiz is not active (e.g., after submitting)
+
+            // Remove 'selected' class from all other options
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Add 'selected' class to the clicked button
+            button.classList.add('selected');
+            selectedOption = optionText;
+        }
+
+        /**
+         * Checks the user's selected answer against the correct answer.
+         * Updates score and provides feedback.
+         */
+        function submitAnswer() {
+            if (!selectedOption) {
+                feedbackMessage.textContent = 'Please select an option!';
+                feedbackMessage.classList.add('incorrect-feedback');
+                return;
+            }
+
+            quizActive = false; // Disable further interaction for this question
+            submitAnswerButton.disabled = true; // Disable submit after answering
+
+            const currentQuestion = questions[currentQuestionIndex];
+            const isCorrect = (selectedOption === currentQuestion.answer);
+
+            // Highlight correct/incorrect options
+            Array.from(optionsContainer.children).forEach(btn => {
+                if (btn.textContent === currentQuestion.answer) {
+                    btn.classList.add('correct');
+                } else if (btn.textContent === selectedOption && !isCorrect) {
+                    btn.classList.add('incorrect');
+                }
+                // Disable all option buttons after submission
+                btn.disabled = true;
+            });
+
+            if (isCorrect) {
+                score++;
+                feedbackMessage.textContent = 'Correct!';
+                feedbackMessage.classList.add('correct-feedback');
+            } else {
+                feedbackMessage.textContent = `Incorrect. The correct answer was: ${currentQuestion.answer}`;
+                feedbackMessage.classList.add('incorrect-feedback');
+            }
+
+            nextQuestionButton.disabled = false; // Enable next button
+        }
+
+        /**
+         * Moves to the next question or displays the results if the quiz is over.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                displayResults();
+            }
+        }
+
+        /**
+         * Displays the final score and the restart button.
+         */
+        function displayResults() {
+            questionSection.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            scoreDisplay.textContent = score;
+            totalQuestionsDisplay.textContent = questions.length;
+        }
+
+        /**
+         * Resets the quiz to its initial state and starts over.
+         */
+        function restartQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            selectedOption = null;
+            quizActive = true;
+            resultSection.classList.add('hidden');
+            questionSection.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // Event Listeners
+        submitAnswerButton.addEventListener('click', submitAnswer);
+        nextQuestionButton.addEventListener('click', nextQuestion);
+        restartQuizButton.addEventListener('click', restartQuiz);
+
+        // Initial load of the first question when the page loads
+        document.addEventListener('DOMContentLoaded', loadQuestion);
+    </script>
+</body>
+</html>
