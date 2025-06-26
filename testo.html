@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two-Pane Find and Replace</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f0f2f5;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .pane {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      border-radius: 8px;
+      margin: 10px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .left-pane {
+      background-color: #ffffff;
+      border-right: 1px solid #e0e0e0;
+      max-width: 300px;
+    }
+    .right-pane {
+      background-color: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+    h2 {
+      color: #333;
+      margin-top: 0;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .record-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      transition: background-color 0.2s ease;
+      cursor: pointer;
+    }
+    .record-item:hover {
+      background-color: #e9e9e9;
+    }
+    .record-item input[type="checkbox"] {
+      margin-right: 12px;
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .record-text {
+      flex-grow: 1;
+      color: #555;
+    }
+    #details-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding-right: 10px; /* For scrollbar */
+      margin-bottom: 20px;
+    }
+    .detail-record-container {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 5px;
+      background-color: #fcfcfc;
+    }
+    .detail-field {
+      margin-bottom: 8px;
+      line-height: 1.5;
+      word-break: break-word; /* Ensure long words break */
+    }
+    .highlight {
+      background-color: #ffeb3b; /* A soft yellow */
+      font-weight: bold;
+      padding: 1px 2px;
+      border-radius: 3px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+    }
+    .controls input[type="text"] {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-width: 150px;
+      box-sizing: border-box;
+    }
+    .controls button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.2s ease;
+    }
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .pane {
+        max-width: none;
+        height: 50vh;
+        margin: 5px;
+      }
+      .left-pane {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      .controls {
+        flex-direction: column;
+      }
+      .controls input, .controls button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="pane left-pane">
+    <h2>Available Records</h2>
+    <div id="recordList">
+      <!-- Records will be dynamically inserted here -->
+    </div>
+  </div>
+
+  <div class="pane right-pane">
+    <h2>Details & Tools</h2>
+    <div id="details-content">
+      <!-- Details of selected records will be displayed here -->
+      <p style="color: #666;">Select records from the left pane to view their details.</p>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="findText" placeholder="Text to find">
+      <input type="text" id="replaceText" placeholder="Replace with">
+      <button id="findNext">Find Next</button>
+      <button id="replace">Replace</button>
+    </div>
+  </div>
+
+  <script>
+    // Sample Data
+    const initialRecords = [
+      { id: 1, name: 'John Doe', role: 'Software Engineer', department: 'Engineering' },
+      { id: 2, name: 'Jane Smith', role: 'Product Manager', department: 'Product Design' },
+      { id: 3, name: 'Mike Johnson', role: 'UX Designer', department: 'Design' },
+      { id: 4, name: 'Sarah Wilson', role: 'Data Analyst', department: 'Analytics' },
+      { id: 5, name: 'Emily Davis', role: 'Marketing Manager', department: 'Marketing' },
+      { id: 6, name: 'David Lee', role: 'Engineer', department: 'Engineering' },
+      { id: 7, name: 'Anna Chen', role: 'HR Specialist', department: 'Human Resources' },
+      { id: 8, name: 'Mark Brown', role: 'Sales Representative', department: 'Sales' },
+      { id: 9, name: 'Olivia White', role: 'QA Engineer', department: 'Engineering' },
+      { id: 10, name: 'Chris Green', role: 'Project Manager', department: 'Operations' }
+    ];
+
+    // Make a copy of initialRecords that we can modify
+    let records = JSON.parse(JSON.stringify(initialRecords));
+
+    // DOM Elements
+    const recordListDiv = document.getElementById('recordList');
+    const detailsContentDiv = document.getElementById('details-content');
+    const findTextInput = document.getElementById('findText');
+    const replaceTextInput = document.getElementById('replaceText');
+    const findNextButton = document.getElementById('findNext');
+    const replaceButton = document.getElementById('replace');
+
+    // State Variables for Find/Replace
+    let currentMatches = []; // Stores all found matches (objects with recordId, field, startIndex, length)
+    let currentMatchIndex = -1; // Index of the currently highlighted match
+
+    // --- Utility Functions ---
+
+    // Renders records in the left pane
+    const renderRecordList = () => {
+      recordListDiv.innerHTML = '';
+      records.forEach(record => {
+        const recordItemDiv = document.createElement('div');
+        recordItemDiv.className = 'record-item';
+        recordItemDiv.dataset.id = record.id;
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.value = record.id;
+        checkbox.addEventListener('change', renderDetailsPane);
+
+        const recordTextSpan = document.createElement('span');
+        recordTextSpan.className = 'record-text';
+        recordTextSpan.textContent = `${record.name} - ${record.role}`; // Display simplified info
+
+        recordItemDiv.appendChild(checkbox);
+        recordItemDiv.appendChild(recordTextSpan);
+        recordListDiv.appendChild(recordItemDiv);
+      });
+    };
+
+    // Renders details of selected records in the right pane
+    const renderDetailsPane = () => {
+      detailsContentDiv.innerHTML = '';
+      const selectedCheckboxes = document.querySelectorAll('#recordList input[type="checkbox"]:checked');
+      const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+      if (selectedIds.length === 0) {
+        detailsContentDiv.innerHTML = '<p style="color: #666;">Select records from the left pane to view their details.</p>';
+        currentMatches = [];
+        currentMatchIndex = -1;
+        return;
+      }
+
+      const selectedRecords = records.filter(record => selectedIds.includes(record.id));
+
+      selectedRecords.forEach(record => {
+        const recordContainer = document.createElement('div');
+        recordContainer.className = 'detail-record-container';
+        recordContainer.dataset.recordId = record.id;
+        
+        const recordTitle = document.createElement('h3');
+        recordTitle.textContent = record.name;
+        recordTitle.style.marginBottom = '10px';
+        recordTitle.style.color = '#007bff';
+        recordContainer.appendChild(recordTitle);
+
+        for (const [key, value] of Object.entries(record)) {
+          if (key === 'id') continue; // Skip ID field in display
+
+          const fieldDiv = document.createElement('div');
+          fieldDiv.className = 'detail-field';
+          fieldDiv.dataset.key = key;
+          fieldDiv.dataset.originalValue = value; // Store original value to easily reconstruct
+
+          let displayedValue = `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`;
+          
+          // Apply highlighting if there's a current match
+          if (currentMatchIndex !== -1 && currentMatches.length > 0) {
+            const currentMatch = currentMatches[currentMatchIndex];
+            if (currentMatch.recordId === record.id && currentMatch.field === key) {
+              const startIndex = currentMatch.startIndex + key.length + 2; // +2 for ": "
+              displayedValue = displayedValue.substring(0, startIndex) +
+                               '<span class="highlight">' +
+                               displayedValue.substring(startIndex, startIndex + currentMatch.length) +
+                               '</span>' +
+                               displayedValue.substring(startIndex + currentMatch.length);
+            }
+          }
+          fieldDiv.innerHTML = displayedValue;
+          recordContainer.appendChild(fieldDiv);
+        }
+        detailsContentDiv.appendChild(recordContainer);
+      });
+
+      // After rendering, if there's a current match, scroll to it
+      if (currentMatchIndex !== -1 && currentMatches.length > 0) {
+        const currentMatch = currentMatches[currentMatchIndex];
+        const recordContainer = detailsContentDiv.querySelector(`[data-record-id="${currentMatch.recordId}"]`);
+        if (recordContainer) {
+          recordContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      }
+    };
+
+    // Finds all occurrences of findText in selected records
+    const findAllMatches = () => {
+      const findText = findTextInput.value.toLowerCase();
+      if (!findText) return [];
+
+      const selectedCheckboxes = document.querySelectorAll('#recordList input[type="checkbox"]:checked');
+      const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+      const selectedRecords = records.filter(record => selectedIds.includes(record.id));
+
+      const matches = [];
+      selectedRecords.forEach(record => {
+        for (const [key, value] of Object.entries(record)) {
+          if (typeof value === 'string' && key !== 'id') { // Only search in string fields, not id
+            let lowerCaseValue = value.toLowerCase();
+            let startIndex = 0;
+            while ((startIndex = lowerCaseValue.indexOf(findText, startIndex)) !== -1) {
+              matches.push({
+                recordId: record.id,
+                field: key,
+                startIndex: startIndex,
+                length: findText.length
+              });
+              startIndex += findText.length; // Move past the found match
+            }
+          }
+        }
+      });
+      return matches;
+    };
+
+    // --- Event Listeners ---
+
+    findNextButton.addEventListener('click', () => {
+      const findText = findTextInput.value.trim();
+      if (!findText) {
+        alert('Please enter text to find.');
+        return;
+      }
+
+      // Re-find all matches every time, in case records changed or selection changed
+      currentMatches = findAllMatches();
+
+      if (currentMatches.length === 0) {
+        alert('No matches found for "' + findText + '" in selected records.');
+        currentMatchIndex = -1;
+        renderDetailsPane(); // Re-render to clear any old highlights
+        return;
+      }
+
+      currentMatchIndex = (currentMatchIndex + 1) % currentMatches.length; // Cycle through matches
+      renderDetailsPane(); // Re-render to show the new highlight
+    });
+
+    replaceButton.addEventListener('click', () => {
+      const findText = findTextInput.value.trim();
+      const replaceText = replaceTextInput.value;
+
+      if (currentMatchIndex === -1 || currentMatches.length === 0) {
+        alert('Please use "Find Next" to locate a match before replacing.');
+        return;
+      }
+      if (!findText) {
+        alert('Find text cannot be empty for replacement.');
+        return;
+      }
+
+      const matchToReplace = currentMatches[currentMatchIndex];
+      const targetRecord = records.find(r => r.id === matchToReplace.recordId);
+
+      if (targetRecord && targetRecord[matchToReplace.field] !== undefined) {
+        // Replace only the specific occurrence
+        const originalFieldValue = targetRecord[matchToReplace.field];
+        const beforeMatch = originalFieldValue.substring(0, matchToReplace.startIndex);
+        const afterMatch = originalFieldValue.substring(matchToReplace.startIndex + matchToReplace.length);
+        
+        targetRecord[matchToReplace.field] = beforeMatch + replaceText + afterMatch;
+        
+        // After replacing, clear highlight and re-evaluate matches
+        currentMatches = [];
+        currentMatchIndex = -1;
+        renderDetailsPane();
+        alert('Replacement successful!');
+      } else {
+        alert('Error: Could not find the record or field to replace.');
+      }
+    });
+
+    // Initial render
+    renderRecordList();
+  </script>
+</body>
+</html>
+
