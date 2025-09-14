@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Lookup Example</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .lookup-container {
+            width: 320px;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 0;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        #username-input {
+            width: 100%;
+            padding: 12px 40px 12px 12px; /* Make space for the icon */
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+        }
+
+        #username-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        
+        /* State-based border colors */
+        .form-group.success #username-input { border-color: #28a745; }
+        .form-group.error #username-input { border-color: #dc3545; }
+
+
+        .status-icon {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            display: none; /* Hidden by default */
+        }
+        
+        /* Spinner Animation */
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3498db;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+        
+        .icon-success { color: #28a745; font-size: 1.2rem; }
+        .icon-error { color: #dc3545; font-size: 1.2rem; }
+        
+        .helper-text {
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            height: 1.2em; /* Reserve space to prevent layout shift */
+            color: #6c757d;
+        }
+
+        .helper-text.error-message {
+            color: #dc3545;
+        }
+        
+        #continue-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: none; /* Hidden by default */
+        }
+        
+        #continue-btn:hover {
+            background-color: #0056b3;
+        }
+        #continue-btn:active {
+            transform: scale(0.98);
+        }
+
+        .visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lookup-container">
+        <h2>Look up DG</h2>
+        <div id="form-group" class="form-group">
+            <input type="text" id="username-input" placeholder="Enter a team name...">
+            
+            <div id="status-icon-container" class="status-icon">
+                </div>
+        </div>
+        
+        <p id="helper-text" class="helper-text">Try 'DG team A', 'DG team X','DG Awesome' etc.</p>
+        
+        <button id="continue-btn">Continue</button>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const formGroup = document.getElementById('form-group');
+        const usernameInput = document.getElementById('username-input');
+        const statusIconContainer = document.getElementById('status-icon-container');
+        const helperText = document.getElementById('helper-text');
+        const continueBtn = document.getElementById('continue-btn');
+
+        // --- Mock Database (Case-Sensitive) ---
+        const existingUsernames = ['DG team A', 'DG team X', 'DG Awesome'];
+
+        // --- State Management ---
+        let debounceTimer;
+
+        // Debounce function to delay execution
+        const debounce = (callback, time) => {
+            window.clearTimeout(debounceTimer);
+            debounceTimer = window.setTimeout(callback, time);
+        };
+
+        // --- UI Update Functions ---
+        const showLoadingState = () => {
+            formGroup.classList.remove('success', 'error');
+            statusIconContainer.innerHTML = '<div class="spinner"></div>';
+            statusIconContainer.style.display = 'block';
+            helperText.textContent = 'Searching...';
+            helperText.className = 'helper-text';
+            continueBtn.style.display = 'none';
+            usernameInput.disabled = true;
+        };
+        
+        const showSuccessState = (foundName) => {
+            formGroup.classList.add('success');
+            formGroup.classList.remove('error');
+            statusIconContainer.innerHTML = '<span class="icon-success">✓</span>';
+            helperText.textContent = `Found: ${foundName}`; // Show the original cased name
+            helperText.className = 'helper-text';
+            continueBtn.style.display = 'block';
+            usernameInput.disabled = false;
+        };
+        
+        const showErrorState = (message) => {
+            formGroup.classList.add('error');
+            formGroup.classList.remove('success');
+            statusIconContainer.innerHTML = '<span class="icon-error">✗</span>';
+            helperText.textContent = message;
+            helperText.className = 'helper-text error-message';
+            continueBtn.style.display = 'none';
+            usernameInput.disabled = false;
+        };
+
+        const showIdleState = () => {
+            formGroup.classList.remove('success', 'error');
+            statusIconContainer.style.display = 'none';
+            helperText.textContent = "Try 'DG team A', 'DG team X', etc.";
+            helperText.className = 'helper-text';
+            continueBtn.style.display = 'none';
+            usernameInput.disabled = false;
+        };
+
+
+        // --- Core Logic ---
+        const performLookup = () => {
+            const query = usernameInput.value.trim();
+
+            if (query === '') {
+                showIdleState();
+                return;
+            }
+
+            showLoadingState();
+
+            // Simulate a network request (e.g., fetch call)
+            setTimeout(() => {
+                // Perform a case-insensitive search using .find()
+                // It returns the actual element from the array, or undefined if not found
+                const foundUser = existingUsernames.find(
+                    name => name.toLowerCase() === query.toLowerCase()
+                );
+
+                if (foundUser) {
+                    // Success! Pass the original, correctly-cased name to the success function
+                    showSuccessState(foundUser);
+                } else {
+                    showErrorState('Not Found');
+                }
+            }, 1000); // Simulate 1 second delay
+        };
+
+        // --- Event Listener ---
+        usernameInput.addEventListener('input', () => {
+            // Use debounce to avoid calling the lookup on every keystroke
+            debounce(performLookup, 500);
+        });
+    </script>
+</body>
+</html>
